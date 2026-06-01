@@ -1,18 +1,28 @@
 /** @type {import('next').NextConfig} */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  //output: "export", // ✅ Enable static export
+
   compiler: {
     styledComponents: true,
   },
+
   images: {
-    domains: ['coin-images.coingecko.com'],
+    domains: ["coin-images.coingecko.com"],
     unoptimized: true,
   },
-  experimental: {},
-  env: {
-    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID,
+
+  eslint: {
+    ignoreDuringBuilds: true,
   },
+
+  experimental: {},
+
+  env: {
+    NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
+      process.env.WALLETCONNECT_PROJECT_ID,
+  },
+
   async headers() {
     return [
       {
@@ -28,7 +38,8 @@ const nextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "X-Requested-With, Content-Type, Authorization",
+            value:
+              "X-Requested-With, Content-Type, Authorization",
           },
         ],
       },

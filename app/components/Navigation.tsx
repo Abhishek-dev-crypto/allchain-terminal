@@ -1,11 +1,13 @@
 import React from "react";
 
-const Navigation = () => {
+const NavBar = () => {
   return (
-    <nav className="bg-gray-800 text-white p-4">
-      <h1 className="text-lg font-bold">My Crypto Exchange</h1>
+    <nav className="bg-gray-800 text-white p-2">
+      <h1 className="text-sm font-semibold">
+          AllChain AI Market Infrastructure
+      </h1>
     </nav>
   );
 };
 
-export default Navigation;
+export default NavBar;

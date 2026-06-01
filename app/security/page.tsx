@@ -77,7 +77,7 @@ export default function SecurityPage() {
         </section>
 
         <div className="text-center mt-8">
-          <Link href="/dashboard" className="text-blue-600 underline">
+          <Link href="/profile" className="text-blue-600 underline">
             Back to Dashboard
           </Link>
         </div>

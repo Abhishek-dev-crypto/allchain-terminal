@@ -1,7 +1,11 @@
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+  initializeFirestore,
+  enableIndexedDbPersistence,
+} from "firebase/firestore";
 
-// Firebase configuration
+/* ---------------- CONFIG ---------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyBKHqrZIGMn1_oMRbHn-0rYkGT-dV24F1U",
   authDomain: "allchain-mvp.firebaseapp.com",
@@ -12,11 +16,23 @@ const firebaseConfig = {
   measurementId: "G-W3ERYPVTN7"
 };
 
-// Initialize Firebase app
-const app = initializeApp(firebaseConfig);
+/* ---------------- INIT ---------------- */
+const app = !getApps().length
+  ? initializeApp(firebaseConfig)
+  : getApp();
 
-// Initialize authentication and Google provider
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+/* ---------------- SERVICES ---------------- */
+export const auth = getAuth(app);
 
-export { auth, googleProvider };
+export const googleProvider = new GoogleAuthProvider();
+
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true,
+});
+
+/* ---------------- OFFLINE CACHE ---------------- */
+enableIndexedDbPersistence(db).catch(() => {
+  console.log("Persistence disabled (multi-tab)");
+});
+
+export default app;

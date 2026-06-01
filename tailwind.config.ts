@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+
+
 const config: Config = {
   content: [
     "./pages/**/*.{ts,tsx}", 
@@ -31,7 +33,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwind-scrollbar-hide")],
 };
 
 export default config;
@@ -42,5 +44,5 @@ module.exports = {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [require("tailwind-scrollbar-hide")],
 };

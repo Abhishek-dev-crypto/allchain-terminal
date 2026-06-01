@@ -1,33 +1,37 @@
-import "../styles/globals.css";
-import type { Metadata } from "next";
-import Warning from "@/components/Warning";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+"use client";
+
+import './globals.css';
+import { usePathname } from "next/navigation";
+
+import { NotificationProvider } from "./contexts/NotificationContext";
 import ClientWrapper from "./components/ClientWrapper";
-import Navigation from "./components/Navigation";
-import GlobalNav from "./components/GlobalNav";
-import ClientSessionWrapper from "./components/ClientSessionWrapper"; // Import ClientSessionWrapper
+import Warning from "./components/Warning";
+import NavBar from './components/Navigation';
 
-export const metadata: Metadata = {
-  title: "Crypto MVP",
-  description: "A secure and fast crypto trading platform.",
-};
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <ClientSessionWrapper>
-          <NotificationProvider>
-            <div className="absolute top-0 left-0 w-full z-50"></div>
-            <Warning />
-            <ClientWrapper>
-              <GlobalNav />
-              <main className="flex flex-col min-h-screen">{children}</main>
-              <Navigation />
-            </ClientWrapper>
-          </NotificationProvider>
-        </ClientSessionWrapper>
-      </body>
+  <NotificationProvider>
+
+    {pathname !== "/" && <Warning />}
+
+    
+
+    <ClientWrapper>{children}</ClientWrapper>
+
+    <div className="border-t border-black bg-yellow-300 px-4 py-2 text-center text-[10px] font-extrabold tracking-widest text-black">
+      SIMULATION MODE ACTIVE — ALLCHAIN CURRENTLY OPERATES IN A PAPER TRADING ENVIRONMENT
+    </div>
+
+  </NotificationProvider>
+</body>
     </html>
   );
 }

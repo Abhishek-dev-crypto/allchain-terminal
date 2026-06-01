@@ -2,30 +2,26 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "lib/firebaseConfig";
+import { auth } from "../../lib/firebaseConfig"; // make sure this path is correct
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isConnected } = useAccount();
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      const isFirebaseLoggedIn = !!user;
-
-      if (!isFirebaseLoggedIn && !isConnected) {
+      if (!user) {
         router.push("/auth/login"); // redirect to login
       }
     });
 
     return () => unsubscribe();
-  }, [isConnected, router]);
+  }, [router]);
 
   return <>{children}</>;
 }

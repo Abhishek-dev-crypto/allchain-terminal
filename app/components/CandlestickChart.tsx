@@ -1,164 +1,298 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import axios from 'axios';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { Card } from '@/components/ui/card';
-import type { ApexOptions } from 'apexcharts';
-import toast, { Toaster } from 'react-hot-toast';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  createChart,
+  IChartApi,
+  ISeriesApi,
+  UTCTimestamp,
+} from 'lightweight-charts';
+import { getKlines } from "@/lib/marketService";
 
+type Candle = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
 
-const ApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
-
-interface CandlestickChartProps {
-  name: string; // ⬅️ Make sure this line is here
+type Props = {
   symbol: string;
-  image?: string;
-  coinId: string;
-}
+  coinName?: string;
+  price?: number;
+  change?: number;
+  high?: number;
+  low?: number;
+  volume?: number;
+};
 
-const dateRanges = {
-  '1D': 1,
-  '7D': 7,
-  '1M': 30,
-  '3M': 90,
-  '1Y': 365,
-} as const;
+const TIMEFRAMES = [
+  { label: '1m', value: '1m' },
+  { label: '5m', value: '5m' },
+  { label: '15m', value: '15m' },
+  { label: '1h', value: '1h' },
+  { label: '4h', value: '4h' },
+  { label: '1d', value: '1d' },
+];
 
-const CandlestickChart: React.FC<CandlestickChartProps> = ({ coinId }) => {
-  const [range, setRange] = useState<keyof typeof dateRanges>('1D');
-  const [series, setSeries] = useState<{ data: { x: Date; y: number[] }[] }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [coinMeta, setCoinMeta] = useState<{
-    name: string;
-    symbol: string;
-    image: string;
-  } | null>(null);
+const BAR_SPACING = 10;
 
-  // Fetch coin metadata
+export default function CandlestickChart({
+  symbol,
+  coinName,
+  price,
+  change,
+  high,
+  low,
+  volume,
+}: Props) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const volumeRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+
+  const [timeframe, setTimeframe] = useState('1m');
+
+  /* ---------------- INIT CHART ---------------- */
   useEffect(() => {
-    const fetchCoinMeta = async () => {
-      try {
-        const { data } = await axios.get(`https://api.coingecko.com/api/v3/coins/${coinId}`);
-        setCoinMeta({
-          name: data.name,
-          symbol: data.symbol,
-          image: data.image.thumb,
-        });
-      } catch (error) {
-        console.error('Error fetching coin metadata:', error);
-        setCoinMeta(null);
-      }
-    };
+    if (!containerRef.current) return;
 
-    fetchCoinMeta();
-  }, [coinId]);
+    const chart = createChart(containerRef.current, {
 
-  // Fetch OHLC chart data
-  useEffect(() => {
-    const fetchOHLCData = async () => {
-      try {
-        setLoading(true);
-        const { data } = await axios.get(
-          `https://api.coingecko.com/api/v3/coins/${coinId}/ohlc`,
-          {
-            params: {
-              vs_currency: 'usd',
-              days: dateRanges[range],
-            },
-          }
-        );
+      localization: {
+  locale: 'en-IN',
+},
 
-        const formatted = data.map((item: number[]) => ({
-          x: new Date(item[0]),
-          y: [item[1], item[2], item[3], item[4]],
-        }));
-
-        setSeries([{ data: formatted }]);
-      } catch (error) {
-        console.error('Error fetching OHLC data:', error);
-        setSeries([]);
-        toast.error('Failed to load chart data, please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOHLCData();
-  }, [coinId, range]);
-
-
-  const options: ApexOptions = {
-    chart: {
-      type: 'candlestick',
-      toolbar: { show: false },
-      background: 'transparent',
-    },
-    theme: { mode: 'dark' },
-    xaxis: {
-      type: 'datetime',
-      labels: { style: { colors: '#ccc' } },
-    },
-    yaxis: {
-      tooltip: { enabled: true },
-      labels: {
-        formatter: (val: number) => `$${val.toFixed(2)}`,
-        style: { colors: '#ccc' },
+      layout: {
+        background: { color: '#0B1220' },
+        textColor: '#d1d5db',
       },
-    },
-    tooltip: { theme: 'dark' },
-    grid: { borderColor: '#333' },
-  };
+      grid: {
+        vertLines: { color: '#1f2937' },
+        horzLines: { color: '#1f2937' },
+      },
+
+      width: containerRef.current.clientWidth,
+      height: containerRef.current?.clientHeight || 400,
+
+      crosshair: { mode: 1 },
+
+      // 🔥 CLEAN BINANCE-STYLE TIME SCALE
+      timeScale: {
+  borderColor: '#2b2b43',
+
+  timeVisible: true,
+  secondsVisible: false,
+
+  rightBarStaysOnScroll: true,
+  fixLeftEdge: true,
+  fixRightEdge: true,
+
+  tickMarkFormatter: (
+  time: UTCTimestamp,
+  tickMarkType: any,
+  locale: string
+) => {
+    return new Date(time * 1000).toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  },
+
+  barSpacing: BAR_SPACING,
+},
+
+      handleScale: {
+        mouseWheel: window.innerWidth > 768,
+        pinch: false,
+        axisPressedMouseMove: false,
+      },
+
+      handleScroll: {
+        mouseWheel: window.innerWidth > 768,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+      },
+    });
+
+    chartRef.current = chart;
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderVisible: false,
+      wickUpColor: '#22c55e',
+      wickDownColor: '#ef4444',
+    });
+
+    candleRef.current = candleSeries;
+
+    const volumeSeries = chart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'volume',
+      base: 0,
+    });
+
+    volumeRef.current = volumeSeries;
+
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: { top: 0.85, bottom: 0 },
+    });
+
+    candleSeries.priceScale().applyOptions({
+      scaleMargins: { top: 0.05, bottom: 0.2 },
+    });
+
+    const resize = () => {
+  if (!containerRef.current || !chartRef.current) return;
+
+  const { clientWidth, clientHeight } = containerRef.current;
+
+  chartRef.current.applyOptions({
+    width: clientWidth,
+    height: clientHeight,
+  });
+
+  chartRef.current.timeScale().applyOptions({
+    barSpacing: BAR_SPACING,
+  });
+};
+
+    window.addEventListener('resize', resize);
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      chart.remove();
+    };
+  }, []);
+
+  /* ---------------- FETCH DATA ---------------- */
+  useEffect(() => {
+    if (!symbol || !candleRef.current || !volumeRef.current) return;
+
+    async function load() {
+      try { 
+
+       const data: Candle[] = await getKlines(symbol, timeframe);
+
+       const seen = new Set<number>();
+
+const candles = data
+  .map((d) => ({
+    time: d.time as UTCTimestamp,
+    open: d.open,
+    high: d.high,
+    low: d.low,
+    close: d.close,
+  }))
+  .filter((c) => {
+    if (seen.has(c.time)) return false;
+    seen.add(c.time);
+    return true;
+  })
+  .sort((a, b) => a.time - b.time);
+
+const volumes = candles.map((d: any, i: number) => ({
+  time: d.time,
+  value: data[i]?.volume ?? 0,
+  color: d.close > d.open ? "#22c55e" : "#ef4444",
+}));
+
+        candleRef.current?.setData(candles);
+        volumeRef.current?.setData(volumes);
+
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        requestAnimationFrame(() => {
+          // 🚨 FIXED: USE TIME-BASED RANGE (NOT LOGICAL RANGE)
+         const from = candles[Math.max(0, candles.length - 120)]?.time;
+          const to = candles[candles.length - 1]?.time;
+
+          chart.timeScale().fitContent();
+
+          chart.timeScale().applyOptions({
+            barSpacing: BAR_SPACING,
+          });
+        });
+
+        
+      } catch (err) {
+        console.error('Chart load error:', err);
+      }
+    }
+
+    
+    load();
+  }, [symbol, timeframe]);
 
   return (
-    <div>
-      {/* Toast Container */}
-      <Toaster position="bottom-center" />
+    <div className="w-full bg-[#0B1220] rounded-lg overflow-hidden border border-white/5">
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2">
-        <div className="flex items-center gap-2">
-          
-          <h2 className="text-xl font-semibold text-white tracking-wide">
-            {coinMeta ? `${coinMeta.name} (${coinMeta.symbol?.toUpperCase()}) / USD` : 'Loading...'}
-          </h2>
+      {/* TOP BAR */}
+     <div
+className="
+px-3 py-2
+border-b border-white/5
+flex flex-col lg:flex-row
+gap-2
+lg:items-center
+lg:justify-between
+text-xs
+"
+>
+        <div className="flex items-center gap-4">
+          <span className="font-semibold text-white text-sm">
+            {coinName || symbol}
+          </span>
+
+          <span className="text-lg font-semibold">
+            {price ? `$${price.toFixed(2)}` : '--'}
+          </span>
+
+          <span className={change !== undefined && change >= 0 ? "text-green-400" : "text-red-400"}>
+            {change?.toFixed(2)}%
+          </span>
         </div>
 
-        <div className="flex flex-wrap gap-1">
-          {Object.keys(dateRanges).map((label) => (
-            <Button
-              key={label}
-              size="sm"
-              variant={range === label ? 'default' : 'ghost'}
-              onClick={() => setRange(label as keyof typeof dateRanges)}
-              className="text-xs"
-            >
-              {label}
-            </Button>
-          ))}
+        <div className="flex items-center gap-6 text-gray-400">
+          <div>24H High: <span className="text-white">{high?.toFixed(2) || '--'}</span></div>
+          <div>24H Low: <span className="text-white">{low?.toFixed(2) || '--'}</span></div>
+          <div>24H Vol: <span className="text-white">{volume?.toFixed(0) || '--'}</span></div>
         </div>
       </div>
 
-      {/* Chart */}
-      <Card className="bg-neutral-900 p-3">
-        {loading ? (
-          <div className="flex justify-center items-center h-[300px]">
-            <Spinner />
-          </div>
-        ) : series.length === 0 ? (
-          <div className="text-center text-white">No data available</div>
-        ) : (
-          <ApexChart options={options} series={series} type="candlestick" height={300} />
-        )}
-      </Card>
+      {/* CONTROLS */}
+      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
+        <div className="flex gap-2">
+          {TIMEFRAMES.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTimeframe(t.value)}
+              className={`text-xs px-2 py-1 rounded ${
+                timeframe === t.value
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-400 hover:bg-white/5'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-      
+        <button className="text-xs text-gray-400 hover:text-white">
+          ⛶ Fullscreen
+        </button>
+      </div>
 
-      
+      {/* CHART */}
+      <div
+  ref={containerRef}
+  className="w-full h-[320px] sm:h-[420px] lg:h-[520px]"
+/>
     </div>
   );
-};
-
-export default CandlestickChart;
+}

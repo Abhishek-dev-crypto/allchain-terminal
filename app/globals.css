@@ -2,17 +2,281 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background-light: #ffffff;
-  --foreground-light: #171717;
-  --background-dark: #0a0a0a;
-  --foreground-dark: #ededed;
-}
-
+/* =========================
+   🌑 BASE (FORCE DARK)
+========================= */
+html,
 body {
-  @apply bg-[var(--background-light)] text-[var(--foreground-light)];
+  background-color: #050505;
+  color: #ededed;
+  overflow-x: hidden;
 }
 
-.dark body {
-  @apply bg-[var(--background-dark)] text-[var(--foreground-dark)];
+/* =========================
+   🎯 GRADIENT TEXT (PRO)
+========================= */
+.text-gradient {
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  background-clip: text;              /* standard */
+  -webkit-background-clip: text;      /* safari */
+  color: transparent;                 /* fallback */
+  -webkit-text-fill-color: transparent;
+
+  /* smooth rendering */
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* =========================
+   🚀 TICKER ANIMATION
+========================= */
+@keyframes tickerScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* WRAPPER */
+.ticker-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* TRACK (SCROLLING CONTAINER) */
+.ticker-track {
+  display: inline-flex; /* 🔥 IMPORTANT */
+  white-space: nowrap;  /* 🔥 PREVENT WRAP */
+  animation: tickerScroll 25s linear infinite;
+  will-change: transform;
+}
+
+.ticker-track {
+  animation: tickerScroll 5s linear infinite;
+}
+
+/* INDIVIDUAL COIN ITEM */
+.ticker-item {
+  display: inline-flex;       /* 🔥 PREVENT STACKING */
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* OPTIONAL: pause on hover */
+.ticker-wrapper:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+/* =========================
+   ✨ FLASH EFFECT (PnL / trades)
+========================= */
+@keyframes flashGreen {
+  0% {
+    background-color: rgba(34, 197, 94, 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes flashRed {
+  0% {
+    background-color: rgba(239, 68, 68, 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* =========================
+   🎬 FADE ANIMATION
+========================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease;
+}
+
+/* =========================
+   📦 SCROLLBAR (PRO LOOK)
+========================= */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* =========================
+   🚀 PRODUCTION TICKER
+========================= */
+
+.ticker {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Smooth GPU accelerated track */
+.ticker__track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 30s linear infinite;
+  will-change: transform;
+}
+
+/* Each item */
+.ticker__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+/* 🔥 Seamless infinite scroll */
+@keyframes ticker-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* 🧊 Edge fade (pro feel) */
+.ticker::before,
+.ticker::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 60px;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ticker::before {
+  left: 0;
+  background: linear-gradient(to right, #020617, transparent);
+}
+
+.ticker::after {
+  right: 0;
+  background: linear-gradient(to left, #020617, transparent);
+}
+
+.guide-active {
+  position: relative !important;
+  z-index: 9999 !important;
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 2px rgba(59,130,246,0.9),
+    0 0 40px rgba(59,130,246,0.35);
+  transition: all 0.3s ease;
+}
+
+.guide-parent-active {
+  position: relative;
+  z-index: 9998;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.terminal-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(18px);
+  border-radius: 28px;
+}
+
+.terminal-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right,
+      rgba(34,211,238,0.06),
+      transparent 30%),
+    radial-gradient(circle at bottom left,
+      rgba(139,92,246,0.05),
+      transparent 35%);
+  pointer-events: none;
+}
+
+.terminal-panel-deep {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(22px);
+  border-radius: 28px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 20px 60px rgba(0,0,0,0.35);
+}
+
+.terminal-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(12px);
+  border-radius: 22px;
+}
+
+.terminal-hover {
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.terminal-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34,211,238,0.18);
+  background: rgba(255,255,255,0.045);
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.28),
+    0 0 0 1px rgba(34,211,238,0.04);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
 }

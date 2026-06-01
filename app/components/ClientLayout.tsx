@@ -6,8 +6,8 @@ import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Session } from "next-auth";
-import { MyContextProvider } from "@/contexts/MyContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+import { MyContextProvider } from "@/app/contexts/MyContext";
+import { NotificationProvider } from "@/app/contexts/NotificationContext";
 
 import "../styles/globals.css";
 

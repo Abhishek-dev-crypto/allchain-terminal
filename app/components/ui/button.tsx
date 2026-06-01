@@ -1,39 +1,40 @@
 import * as React from "react";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "destructive" | "outline" | "ghost";
-  size?: "sm" | "md" | "lg"; // ✅ Added size prop
-}
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "default";
+  size?: "sm" | "md" | "lg";
+};
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className = "", children, variant = "default", size = "md", ...props }, ref) => {
-    const baseClasses = "rounded-md transition font-medium";
+  ({ className = "", variant = "primary", size = "md", ...props }, ref) => {
+    
+    const base =
+      "inline-flex items-center justify-center rounded-md font-medium transition";
 
-    const sizeClasses = {
-      sm: "px-2 py-1 text-sm",
-      md: "px-4 py-2 text-base",
-      lg: "px-6 py-3 text-lg",
+    const variants = {
+      primary: "bg-yellow-500 text-black hover:bg-yellow-400",
+      secondary: "bg-neutral-800 text-white hover:bg-neutral-700",
+      danger: "bg-red-600 text-white hover:bg-red-500",
+      default: "bg-neutral-900 text-white border border-neutral-700 hover:bg-neutral-800",
+      ghost: "bg-transparent text-gray-300 hover:bg-neutral-800",
     };
 
-    const variantClasses = {
-      default: "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400",
-      destructive: "bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-400",
-      outline: "border border-gray-500 text-gray-300 hover:bg-gray-800",
-      ghost: "bg-transparent text-gray-300 hover:bg-gray-800",
+    const sizes = {
+      sm: "text-xs px-3 py-1",
+      md: "text-sm px-4 py-2",
+      lg: "text-base px-5 py-3",
     };
 
     return (
       <button
         ref={ref}
-        className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+        className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
         {...props}
-      >
-        {children}
-      </button>
+      />
     );
   }
 );
 
 Button.displayName = "Button";
 
-export { Button };
+export default Button;

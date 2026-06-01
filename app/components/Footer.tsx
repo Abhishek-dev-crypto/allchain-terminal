@@ -83,7 +83,7 @@ const Footer = () => {
       
 
       {/* 📊 STATS */}
-        <div className="grid grid-cols-3 gap-6 px-8 md:px-12 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 md:px-12 py-6">
 
       {[
           { label: "Demo Traders", value: stats.users },
@@ -108,7 +108,7 @@ const Footer = () => {
 </div>
 
       {/* MAIN FOOTER GRID */}
-      <div className="relative w-full px-8 md:px-12 py-12 grid grid-cols-2 md:grid-cols-4 gap-10 text-gray-400">
+      <div className="relative w-full px-8 md:px-12 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 text-gray-400">
 
         {/* LOGO */}
         <div className="transition-all duration-700">

@@ -213,7 +213,7 @@ useEffect(() => {
   </div>
 
   {/* RIGHT */}
-  <div className="flex items-center gap-1.5">
+  <div className="flex items-center gap-1.5 flex-wrap justify-end">
 
     {[selectedCoin, "ETH", "SOL", "BNB"]
       .filter((c, i, arr) => arr.indexOf(c) === i)
@@ -252,7 +252,7 @@ useEffect(() => {
 </div>
 
       {/* ================= ROW 2 ================= */}
-      <div className="grid grid-cols-3 gap-2 p-2 h-[250px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-2 min-h-[250px]">
 
         {/* CHART */}
         <div

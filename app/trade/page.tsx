@@ -44,9 +44,14 @@ export default function TradePage() {
     name: 'Bitcoin',
   });
 
+  
   const [mobileTab, setMobileTab] = useState<
   "trade" | "orderbook" | "insights"
 >("trade");
+
+  const [mobileCoinSelected, setMobileCoinSelected] =
+  useState(false);
+
 
   const [engineState, setEngineState] = useState({
   balance: 1000000,
@@ -259,15 +264,29 @@ const newState = executeTrade({
 
   {/* LEFT — COIN LIST */}
   
-<div className="w-full lg:w-[240px] h-[220px] lg:h-[620px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex flex-col">
+{/* DESKTOP COIN LIST */}
+<div className="hidden lg:flex lg:w-[240px] h-[620px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex-col">
+  <CoinList
+    selectedCoin={selectedCoin.symbol}
+    onSelectCoin={setSelectedCoin}
+  />
+</div>
+
+{/* MOBILE COIN LIST */}
+{!mobileCoinSelected && (
+  <div className="lg:hidden w-full h-[calc(100vh-120px)] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex flex-col">
     <CoinList
       selectedCoin={selectedCoin.symbol}
-      onSelectCoin={setSelectedCoin}
+      onSelectCoin={(coin) => {
+        setSelectedCoin(coin);
+        setMobileCoinSelected(true);
+      }}
     />
   </div>
+)}
 
   {/* CENTER */}
-<div className="flex-1 flex flex-col">
+<div className="hidden lg:flex flex-1 flex-col">
 
   <div className="w-full h-[300px] sm:h-[420px] lg:h-[620px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur overflow-hidden">
    <CandlestickChart
@@ -283,7 +302,34 @@ const newState = executeTrade({
 
   </div>
 
+  {/* MOBILE TERMINAL */}
+{mobileCoinSelected && (
+  <div className="lg:hidden w-full">
+
+    <button
+      onClick={() => setMobileCoinSelected(false)}
+      className="mb-2 w-full rounded-lg bg-white/5 py-3 text-sm"
+    >
+      ← Back To Markets
+    </button>
+
+    <div className="h-[320px] border border-white/5 rounded-xl bg-[#0B1220]/80 overflow-hidden">
+      <CandlestickChart
+        symbol={selectedCoin.symbol}
+        coinName={selectedCoin.name}
+        price={parseFloat(data?.lastPrice || 0)}
+        change={parseFloat(data?.priceChangePercent || 0)}
+        high={parseFloat(data?.highPrice || 0)}
+        low={parseFloat(data?.lowPrice || 0)}
+        volume={parseFloat(data?.volume || 0)}
+      />
+    </div>
+
+  </div>
+)}
+
   {/* MOBILE TERMINAL TABS */}
+{mobileCoinSelected && (
 <div className="lg:hidden mt-2">
 
   <div className="grid grid-cols-3 gap-2 mb-2">
@@ -376,7 +422,9 @@ const newState = executeTrade({
 
 </div>
 
-  {/* RIGHT — AI ENGINE */}
+)} 
+
+
 {/* DESKTOP ONLY */}
 <div className="hidden lg:block lg:w-[300px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur p-2 overflow-y-auto">
   <AIEngine
@@ -447,4 +495,4 @@ const newState = executeTrade({
   </div>
 </div>
 </div>
- )}
+)}

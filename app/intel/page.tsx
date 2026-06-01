@@ -122,7 +122,7 @@ export default function IntelPage() {
               </div>
 
               {/* STATS */}
-              <div className="mt-6 grid grid-cols-3 gap-4">
+              <div className="mt-6 grid grid-cols-3 gap-2 md:gap-4">
 
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
 
@@ -130,7 +130,7 @@ export default function IntelPage() {
                     Markets
                   </p>
 
-                  <p className="mt-2 text-2xl font-semibold text-white">
+                 <p className="mt-2 text-lg md:text-2xl font-semibold text-cyan-300">
                     400+
                   </p>
 
@@ -154,7 +154,7 @@ export default function IntelPage() {
                     Status
                   </p>
 
-                  <p className="mt-2 text-2xl font-semibold text-emerald-300">
+                 <p className="mt-2 text-lg md:text-2xl font-semibold text-emerald-300">
                     ACTIVE
                   </p>
 
@@ -258,9 +258,9 @@ export default function IntelPage() {
               {/* STATS */}
               <div className="mt-6 grid grid-cols-3 gap-4">
 
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="rounded-xl border border-white/10 bg-black/30 p-2 md:p-4">
 
-                  <p className="text-xs text-white/40">
+                  <p className="text-[10px] md:text-xs text-white/40">
                     AI Systems
                   </p>
 

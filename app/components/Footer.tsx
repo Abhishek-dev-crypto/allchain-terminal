@@ -92,7 +92,7 @@ const Footer = () => {
         ].map((item, i) => (
         <div
             key={i}
-            className={`p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:border-blue-500/30 ${
+            className={`p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl transition-all duration-500 hover:scale-105 hover:border-blue-500/30 ${
             visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
       }`}
         >

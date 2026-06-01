@@ -259,7 +259,7 @@ useEffect(() => {
           ref={chartRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setCrosshair(null)}
-          className="col-span-2 bg-white/5 backdrop-blur-md rounded-xl p-2 flex flex-col relative hover:scale-[1.01] transition"
+          className="md:col-span-2 bg-white/5 backdrop-blur-md rounded-xl p-2 flex flex-col relative hover:scale-[1.01] transition"
         >
           <div className="text-gray-400 text-[10px] mb-1 flex justify-between">
             <span className="flex gap-1">
@@ -275,7 +275,7 @@ useEffect(() => {
             </span>
           </div>
 
-          <div className="flex-1 flex items-end gap-[2px] relative">
+          <div className="h-[220px] flex items-end gap-[2px] relative">
             {chart.map((v, i) => {
               const isLast = i === chart.length - 1;
 
@@ -396,7 +396,7 @@ useEffect(() => {
       </div>
 
     {/* ================= MARKET TELEMETRY ================= */}
-<div className="grid grid-cols-5 gap-1 px-2 pb-2 text-[9px]">
+<div className="grid grid-cols-2 md:grid-cols-5 gap-1 px-2 pb-2 text-[9px]">
 
   {telemetry.map((item, i) => (
     <motion.div

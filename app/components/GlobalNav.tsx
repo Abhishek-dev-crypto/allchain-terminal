@@ -316,19 +316,19 @@ if (mobile) {
   return (
     <div className="flex flex-col space-y-2 px-2">
 
-      <Link href="/profile" className="flex items-center gap-2">
+      <Link href="/profile" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2">
         <UserIcon size={18} />
         Profile
       </Link>
 
       <div className="border-t border-white/10 my-2" />
 
-      <Link href="/help">Help Center</Link>
-      <Link href="/support">Support</Link>
-      <Link href="/security">Security</Link>
-      <Link href="/terms">Terms of Service</Link>
-      <Link href="/privacy">Privacy Policy</Link>
-      <Link href="/pages/legal">Legal Notice</Link>
+      <Link href="/help" onClick={() => setDropdownOpen(false)}>Help Center</Link>
+      <Link href="/support" onClick={() => setDropdownOpen(false)}>Support</Link>
+      <Link href="/security" onClick={() => setDropdownOpen(false)}>Security</Link>
+      <Link href="/terms" onClick={() => setDropdownOpen(false)}>Terms of Service</Link>
+      <Link href="/privacy" onClick={() => setDropdownOpen(false)}>Privacy Policy</Link>
+      <Link href="/legal" onClick={() => setDropdownOpen(false)}>Legal Notice</Link>
 
       <div className="border-t border-white/10 my-2" />
 

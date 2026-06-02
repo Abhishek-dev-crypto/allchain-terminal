@@ -1,86 +1,140 @@
 'use client';
 
-import { useState } from "react";
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function SecurityPage() {
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 p-8 scroll-smooth" id="top">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-12 text-center">
-          <h1 className="text-5xl font-bold mb-4 text-blue-700">
-            Security &amp; Compliance
+    <div className="min-h-screen bg-[#0B1220] text-white">
+      <div className="max-w-5xl mx-auto px-6 py-16">
+
+        {/* HEADER */}
+        <div className="text-center mb-14">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Security Center
           </h1>
-          <p className="text-xl">
-            Your safety is our top priority. Please review our security measures and legal notices.
-          </p>
-        </header>
 
-        <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-4">Two-Factor Authentication (2FA)</h2>
-          <p className="mb-4 text-lg">
-            Enhance the security of your AllChain account by enabling Two-Factor Authentication (2FA).
-            With 2FA, you&apos;ll need an additional verification step (e.g., a code from your authenticator app)
-            to access your account.
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Protecting users and maintaining platform integrity are core
+            priorities at AllChain. Review our security practices,
+            account safety guidance, and risk disclosures.
           </p>
-          <div className="flex items-center">
-            <span className="mr-4 font-semibold">
-              2FA is currently {twoFactorEnabled ? "Enabled" : "Disabled"}.
-            </span>
-            <button
-              onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-              className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500"
-            >
-              {twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}
-            </button>
+        </div>
+
+        {/* PLATFORM SECURITY */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">
+            Platform Security
+          </h2>
+
+          <div className="space-y-4 text-gray-300">
+            <p>
+              AllChain implements modern security practices to help
+              safeguard user accounts and platform infrastructure.
+            </p>
+
+            <ul className="space-y-2 list-disc list-inside">
+              <li>Secure authentication workflows</li>
+              <li>Protected API communication</li>
+              <li>Session monitoring and activity tracking</li>
+              <li>Regular platform maintenance and updates</li>
+              <li>Access controls and account protection measures</li>
+            </ul>
           </div>
-          <p className="mt-4 text-sm text-gray-600">
-            (Note: This is a simulation. In production, integrate with a TOTP or SMS verification service.)
-          </p>
-        </section>
+        </div>
 
-        <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-4">Risk Disclosures &amp; Legal Notices</h2>
-          <p className="mb-4 text-lg">
-            Cryptocurrency trading involves significant risks. Please ensure you fully understand these risks before trading.
-          </p>
-          <ul className="list-disc list-inside space-y-2 text-lg">
-            <li>
-              <strong>Trading Risk:</strong> Crypto markets are highly volatile and unpredictable. Past performance is not indicative of future results.
-            </li>
-            <li>
-              <strong>Security Risk:</strong> Although AllChain employs advanced security measures, no system is completely foolproof. Personal caution is required.
-            </li>
-            <li>
-              <strong>Legal Disclaimer:</strong> AllChain does not provide financial or investment advice. Trading cryptocurrencies carries risks, and you are solely responsible for your trading decisions.
-            </li>
-            <li>
-              <strong>Compliance:</strong> AllChain adheres to regulatory standards, but guidelines can change rapidly.
-            </li>
-          </ul>
-          <p className="mt-4 text-lg">
-            For more details, please review our full <a href="/legal" className="text-blue-600 underline">Legal Notice</a> page.
-          </p>
-        </section>
+        {/* ACCOUNT SAFETY */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">
+            Account Safety Tips
+          </h2>
 
-        <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-4">Security Tips &amp; Scam Prevention</h2>
-          <p className="text-lg">
-            Always be cautious of unsolicited messages or requests for personal information. All official communications from AllChain will come through verified channels.
-            If you suspect any fraudulent activity, report it immediately to our support team.
-          </p>
-          <p className="mt-4 text-lg">
-            Stay informed and vigilant&mdash;your security is our top priority.
-          </p>
-        </section>
+          <div className="space-y-3 text-gray-300">
+            <p>
+              You play an important role in keeping your account secure.
+            </p>
 
-        <div className="text-center mt-8">
-          <Link href="/profile" className="text-blue-600 underline">
-            Back to Dashboard
+            <ul className="space-y-2 list-disc list-inside">
+              <li>Never share passwords or verification codes.</li>
+              <li>Use strong and unique passwords.</li>
+              <li>Verify website URLs before signing in.</li>
+              <li>Be cautious of phishing emails and fake support messages.</li>
+              <li>Log out from shared or public devices.</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* SCAM PREVENTION */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">
+            Scam Prevention
+          </h2>
+
+          <div className="space-y-3 text-gray-300">
+            <p>
+              Cryptocurrency scams often impersonate legitimate platforms.
+            </p>
+
+            <ul className="space-y-2 list-disc list-inside">
+              <li>
+                AllChain will never request passwords through email,
+                chat, or social media.
+              </li>
+              <li>
+                Beware of guaranteed profit schemes and investment promises.
+              </li>
+              <li>
+                Verify official communication channels before sharing information.
+              </li>
+              <li>
+                Report suspicious activity immediately through our support team.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* RISK DISCLOSURE */}
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6">
+          <h2 className="text-2xl font-semibold mb-4 text-amber-300">
+            Risk Disclosure
+          </h2>
+
+          <div className="space-y-3 text-gray-300">
+            <p>
+              Digital asset markets are highly volatile and involve risk.
+            </p>
+
+            <ul className="space-y-2 list-disc list-inside">
+              <li>Asset prices may fluctuate significantly.</li>
+              <li>Past performance does not guarantee future results.</li>
+              <li>
+                AllChain does not provide financial, investment, or tax advice.
+              </li>
+              <li>
+                Users are responsible for their own trading and investment decisions.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* FOOTER LINKS */}
+        <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-gray-400">
+          <Link href="/help" className="hover:text-white">
+            Help Center
+          </Link>
+
+          <Link href="/support" className="hover:text-white">
+            Support
+          </Link>
+
+          <Link href="/terms" className="hover:text-white">
+            Terms
+          </Link>
+
+          <Link href="/pages/legal" className="hover:text-white">
+            Legal
           </Link>
         </div>
+
       </div>
     </div>
   );

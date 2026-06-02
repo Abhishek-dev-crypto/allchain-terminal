@@ -118,8 +118,8 @@ export default function GlobalNav() {
   if (!isClient) return null;
 
   return (
-    <nav className="bg-gray-900 text-white sticky top-0 z-[100] w-full border-b border-white/10">
-      <div className="flex items-center justify-between">
+    <nav className="bg-gray-900 text-white sticky top-0 z-[100] w-full border-b border-white/10 h-12">
+      <div className="flex items-center justify-between px-4 py-3 flex-wrap md:flex-nowrap">
 
         {navLoading && (
   <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center">
@@ -132,10 +132,10 @@ export default function GlobalNav() {
 )}
 
         {/* LEFT */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center gap-3 min-w-0">
           <button
   onClick={() => navigateWithLoading('/intel')}
-  className="text-2xl font-bold hover:text-blue-400"
+  className="text-lg font-bold hover:text-blue-400 whitespace-nowrap"
 >
   AllChain
 </button>
@@ -155,7 +155,7 @@ export default function GlobalNav() {
         <div className="hidden md:flex items-center gap-6">
 
           {user && (
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2 text-[11px] whitespace-nowrap">
 
   {/* Portfolio */}
   
@@ -254,15 +254,15 @@ function NavLinks({
       : 'hover:text-blue-400';
 
   const links = [
-    { name: 'Trade', href: '/trade' },
-    { name: 'Market', href: '/market' },
-    { name: 'NFT', href: '/nft' },
-    { name: 'Learn', href: '/learn' },
-  ];
+  { name: 'T', href: '/trade' },
+  { name: 'M', href: '/market' },
+  { name: 'N', href: '/nft' },
+  { name: 'L', href: '/learn' },
+];
 
   return (
     <div
-      className={`flex items-center gap-6 flex-nowrap`}
+      className="flex items-center gap-3 text-sm whitespace-nowrap"
     >
       {links.map(({ name, href }) => (
         <button

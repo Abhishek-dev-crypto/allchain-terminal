@@ -770,7 +770,7 @@ const momentumLeaders = useMemo(() => {
         className={`
           grid
 ${fullscreen
-  ? 'grid-cols-6'
+  ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
   : 'grid-cols-4'}
           auto-rows-fr
           gap-2

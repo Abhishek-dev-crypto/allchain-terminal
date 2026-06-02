@@ -181,45 +181,38 @@ function MarketTerminal() {
 
         {/* PREMIUM RAIL (desktop only) */}
         <div className="col-span-1 xl:col-span-3">
-          <PremiumRail />
+          <div className="h-full overflow-y-auto">
+            <PremiumRail />
+          </div>
+        </div>
       </div>
-      </div>
-
-      {/* ---------------- MOBILE LEFT DRAWER ---------------- */}
       
-
-      {/* ---------------- MOBILE PREMIUM SHEET ---------------- */}
       
       {/* MOBILE LENS OVERLAY */}
-{lensOverlayOpen && (
-  <div className="absolute inset-0 z-50 bg-black/70 xl:hidden">
+      {lensOverlayOpen && (
+        <div className="absolute inset-0 z-50 bg-black/70 xl:hidden">
 
-    <div
-  className="
-    absolute
-    left-0
-    top-[72px]
-    bottom-0
-    w-[300px]
-    bg-[#0B1220]
-    border-r
-    border-white/10
-    overflow-y-auto
-  "
->
-  <LeftIntelligencePanel
-    onLensSelect={() => setLensOverlayOpen(false)}
-  />
-</div>
+      <div
+        className="
+          absolute
+          left-0
+          top-[72px]
+          bottom-0
+          w-[300px]
+          bg-[#0B1220]
+          border-r
+          border-white/10
+          overflow-y-auto">
+          <LeftIntelligencePanel
+          onLensSelect={() => setLensOverlayOpen(false)}/>
+      </div>
 
    <div
-  className="absolute left-[300px] right-0 top-0 bottom-0"
-  onClick={() => setLensOverlayOpen(false)}
-/>
-
+      className="absolute left-[300px] right-0 top-0 bottom-0"
+        onClick={() => setLensOverlayOpen(false)}
+      />
   </div>
 )}
-
     </div>
   );
 }

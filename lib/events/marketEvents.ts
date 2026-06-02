@@ -28,13 +28,13 @@ export function subscribeMarketEvent(
   event: MarketEvent,
   listener: Listener
 ) {
-  const existing =
-    listeners.get(event) || [];
+  const existing = listeners.get(event) || [];
 
-  listeners.set(event, [
-    ...existing,
-    listener,
-  ]);
+  // ❗ Prevent duplicate registration
+  const alreadyExists = existing.includes(listener);
+  if (!alreadyExists) {
+    listeners.set(event, [...existing, listener]);
+  }
 
   return () => {
     const updated =

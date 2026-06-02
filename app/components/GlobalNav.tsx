@@ -312,14 +312,11 @@ function AuthSection({
       document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
- if (mobile) {
+if (mobile) {
   return (
     <div className="flex flex-col space-y-2 px-2">
 
-      <Link
-        href="/profile"
-        className="flex items-center gap-2"
-      >
+      <Link href="/profile" className="flex items-center gap-2">
         <UserIcon size={18} />
         Profile
       </Link>
@@ -327,14 +324,11 @@ function AuthSection({
       <div className="border-t border-white/10 my-2" />
 
       <Link href="/help">Help Center</Link>
-
       <Link href="/support">Support</Link>
-
       <Link href="/security">Security</Link>
-
-      <Link href="/terms">Terms</Link>
-
-      <Link href="/pages/legal">Legal</Link>
+      <Link href="/terms">Terms of Service</Link>
+      <Link href="/privacy">Privacy Policy</Link>
+      <Link href="/pages/legal">Legal Notice</Link>
 
       <div className="border-t border-white/10 my-2" />
 
@@ -409,6 +403,13 @@ function AuthSection({
     >
       Terms of Service
     </Link>
+
+    <Link
+  href="/privacy"
+  className="block px-4 py-2 hover:bg-gray-100"
+>
+  Privacy Policy
+</Link>
 
     <Link
       href="/legal"

@@ -1069,22 +1069,23 @@ ${fullscreen
         <HeatmapUI />
 
         <button
-          onClick={() => setOpen(true)}
-          className="
-            mt-4
-            w-full
-            rounded-xl
-            border border-white/10
-            bg-white/[0.05]
-            py-3
-            text-sm
-            text-white/80
-            transition
-            hover:bg-white/[0.08]
-          "
-        >
-          View Full Heatmap
-        </button>
+  onClick={() => setOpen(true)}
+  className="
+    mt-4
+    w-full
+    rounded-xl
+    border border-white/10
+    bg-white/[0.05]
+    py-3
+    text-sm text-white/80
+    transition
+    hover:bg-white/[0.08]
+
+    hidden sm:block
+  "
+>
+  View Full Heatmap
+</button>
       </motion.div>
 
       {/* FULLSCREEN */}

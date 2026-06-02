@@ -182,7 +182,7 @@ function MarketTerminal() {
 
         {/* PREMIUM RAIL (desktop only) */}
         <div className="col-span-1 xl:col-span-3">
-          <div className="h-full overflow-y-auto">
+          <div className="h-full overflow-y-auto max-w-[250px] xl:max-w-none ml-auto">
             <PremiumRail />
           </div>
         </div>

@@ -334,6 +334,15 @@ const newState = executeTrade({
       />
     </div>
 
+    {/* MOBILE POSITIONS */}
+      <div className="mt-3">
+        <PositionsPanel
+          portfolio={engineState.portfolio}
+          trades={engineState.trades}
+          currentPriceMap={currentPriceMap}
+        />
+</div>
+
   </div>
 )}
 

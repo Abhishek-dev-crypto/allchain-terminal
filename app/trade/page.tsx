@@ -274,15 +274,25 @@ const newState = executeTrade({
 
 {/* MOBILE COIN LIST */}
 {!mobileCoinSelected && (
-  <div className="lg:hidden w-full h-[calc(100vh-120px)] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex flex-col">
-    <CoinList
-      selectedCoin={selectedCoin.symbol}
-      onSelectCoin={(coin) => {
-        setSelectedCoin(coin);
-        setMobileCoinSelected(true);
-      }}
-    />
-  </div>
+  <>
+    <div className="lg:hidden w-full border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex flex-col">
+      <CoinList
+        selectedCoin={selectedCoin.symbol}
+        onSelectCoin={(coin) => {
+          setSelectedCoin(coin);
+          setMobileCoinSelected(true);
+        }}
+      />
+    </div>
+
+    <div className="lg:hidden mt-2">
+      <PositionsPanel
+        portfolio={engineState.portfolio}
+        trades={engineState.trades}
+        currentPriceMap={currentPriceMap}
+      />
+    </div>
+  </>
 )}
 
   {/* CENTER */}

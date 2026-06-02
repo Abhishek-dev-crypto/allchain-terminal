@@ -10,6 +10,7 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { onAuthStateChanged } from "firebase/auth";
 import TradeSuccessModal from '@/app/components/TradeSuccessModal';
+import AuthGuard from '@/app/components/auth/AuthGuard';
 
 /* ---------------- SYMBOL MAP ---------------- */
 const toSymbol = (coin: string) => {
@@ -301,6 +302,7 @@ const positions = useMemo(() => {
   if (loading) return <div className="text-white p-10">Loading...</div>;
 
   return (
+    <AuthGuard>
     <div className="min-h-screen bg-black text-white p-6 space-y-6">
 
       {/* HEADER */}
@@ -392,5 +394,6 @@ const positions = useMemo(() => {
       </Button>
 
     </div>
+    </AuthGuard>
   );
 }

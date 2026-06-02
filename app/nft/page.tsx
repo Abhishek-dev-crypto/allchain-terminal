@@ -1,7 +1,9 @@
 'use client';
+import AuthGuard from "../components/auth/AuthGuard";
 
 export default function NFTPage() {
   return (
+    <AuthGuard>
     <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-[#0B1220] text-white">
       
       <div className="text-center space-y-4">
@@ -16,5 +18,6 @@ export default function NFTPage() {
 
       </div>
     </div>
+    </AuthGuard>
   );
 }

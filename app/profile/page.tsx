@@ -10,6 +10,7 @@ import Card from '../components/ui/card';
 import Button from '../components/ui/button';
 
 import { derivePortfolio } from '@/lib/exchangeEngine';
+import AuthGuard from '../components/auth/AuthGuard';
 
 /* ---------------- TYPES ---------------- */
 type Trade = {
@@ -81,6 +82,7 @@ const state = derivePortfolio(normalizedTrades);
 
   /* ---------------- UI ---------------- */
   return (
+    <AuthGuard>
     <div className="min-h-screen bg-black text-white">
 
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
@@ -209,5 +211,6 @@ const state = derivePortfolio(normalizedTrades);
 
       </div>
     </div>
+    </AuthGuard>
   );
 }

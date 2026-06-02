@@ -1,7 +1,9 @@
 'use client';
+import AuthGuard from "../components/auth/AuthGuard";
 
 export default function LearnPage() {
   return (
+    <AuthGuard>
     <div className="flex items-center justify-center h-screen bg-[#050816] text-white px-6">
       <div className="text-center space-y-3">
 
@@ -19,6 +21,7 @@ export default function LearnPage() {
 
       </div>
     </div>
+    </AuthGuard>
   );
 }
   

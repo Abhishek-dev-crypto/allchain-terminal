@@ -104,6 +104,12 @@ export default function GlobalNav() {
 
   signOut(auth)
     .then(() => {
+
+      localStorage.setItem(
+      "allchain_logout",
+      Date.now().toString()
+    );
+    
       setTimeout(() => {
         router.push('/');
         setNavLoading(false);

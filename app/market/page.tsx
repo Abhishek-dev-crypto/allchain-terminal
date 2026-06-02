@@ -24,6 +24,7 @@ import AlertsWorkspace from "../components/terminal/workspaces/AlertsWorkspace";
 
 import { LENSES } from "@/lib/terminal/lenses";
 import TerminalGuide from "../components/terminal/shared/TerminalGuide";
+import AuthGuard from "../components/auth/AuthGuard";
 
 /* ---------------- STATUS ---------------- */
 function TerminalStatus() {
@@ -218,12 +219,15 @@ function MarketTerminal() {
 }
 
 /* ---------------- PAGE WRAPPER ---------------- */
+
 export default function MarketPage() {
   return (
-    <MarketProvider>
-      <TerminalProvider>
-        <MarketTerminal />
-      </TerminalProvider>
-    </MarketProvider>
+    <AuthGuard>
+      <MarketProvider>
+        <TerminalProvider>
+          <MarketTerminal />
+        </TerminalProvider>
+      </MarketProvider>
+    </AuthGuard>
   );
 }

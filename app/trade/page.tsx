@@ -257,7 +257,7 @@ const newState = executeTrade({
 
   /* ---------------- UI ---------------- */
  return (
-  <div className="min-h-screen bg-[#0B1220] text-white">
+  <div className="bg-[#0B1220] text-white">
 
     {/* 🔥 TOP TRADING ZONE */}
     <div className="flex flex-col lg:flex-row gap-2 p-2 border-b border-white/5">

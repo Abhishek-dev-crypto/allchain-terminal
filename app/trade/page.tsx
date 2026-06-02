@@ -313,7 +313,16 @@ const newState = executeTrade({
       ← Back To Markets
     </button>
 
-    <div className="h-[520px] border border-white/5 rounded-xl bg-[#0B1220]/80">
+    <div className="
+  rounded-2xl
+  border border-white/10
+  bg-gradient-to-b
+  from-[#111827]
+  to-[#0B1220]
+  shadow-xl
+  shadow-black/30
+  overflow-hidden
+">
       <CandlestickChart
         symbol={selectedCoin.symbol}
         coinName={selectedCoin.name}

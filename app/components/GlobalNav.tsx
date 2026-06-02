@@ -109,7 +109,7 @@ export default function GlobalNav() {
       "allchain_logout",
       Date.now().toString()
     );
-    
+
       setTimeout(() => {
         router.push('/');
         setNavLoading(false);
@@ -312,22 +312,43 @@ function AuthSection({
       document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (mobile) {
-    return (
-      <div className="flex flex-col space-y-2 px-2">
-        <Link href="/profile" className="flex items-center gap-2">
-          <UserIcon size={18} /> Profile
-        </Link>
+ if (mobile) {
+  return (
+    <div className="flex flex-col space-y-2 px-2">
 
-        <button
-          onClick={onSignOut}
-          className="text-red-400 flex items-center gap-2"
-        >
-          <LogOut size={18} /> Sign Out
-        </button>
-      </div>
-    );
-  }
+      <Link
+        href="/profile"
+        className="flex items-center gap-2"
+      >
+        <UserIcon size={18} />
+        Profile
+      </Link>
+
+      <div className="border-t border-white/10 my-2" />
+
+      <Link href="/help">Help Center</Link>
+
+      <Link href="/support">Support</Link>
+
+      <Link href="/security">Security</Link>
+
+      <Link href="/terms">Terms</Link>
+
+      <Link href="/pages/legal">Legal</Link>
+
+      <div className="border-t border-white/10 my-2" />
+
+      <button
+        onClick={onSignOut}
+        className="text-red-400 flex items-center gap-2"
+      >
+        <LogOut size={18} />
+        Sign Out
+      </button>
+
+    </div>
+  );
+}
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -346,19 +367,67 @@ function AuthSection({
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded shadow-lg">
-          <Link href="/profile" className="block px-4 py-2 hover:bg-gray-100">
-            Profile
-          </Link>
+  <div className="absolute right-0 mt-2 w-56 bg-white text-black rounded-lg shadow-xl overflow-hidden">
 
-          <button
-            onClick={onSignOut}
-            className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
-          >
-            Sign Out
-          </button>
-        </div>
-      )}
+    <Link
+      href="/profile"
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Profile
+    </Link>
+
+    <div className="border-t border-gray-200" />
+
+    <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+      Resources
+    </div>
+
+    <Link
+      href="/help"
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Help Center
+    </Link>
+
+    <Link
+      href="/support"
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Support
+    </Link>
+
+    <Link
+      href="/security"
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Security
+    </Link>
+
+    <Link
+      href="/terms"
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Terms of Service
+    </Link>
+
+    <Link
+      href="/pages/legal"
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Legal
+    </Link>
+
+    <div className="border-t border-gray-200" />
+
+    <button
+      onClick={onSignOut}
+      className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+    >
+      Sign Out
+    </button>
+
+  </div>
+)}
     </div>
   );
 }

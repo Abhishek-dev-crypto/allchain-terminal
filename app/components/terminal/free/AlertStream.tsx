@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 import { buildAlerts } from '@/lib/intel/buildAlerts';
@@ -46,24 +46,27 @@ export default function AlertStream() {
 
   useEffect(() => {
   const unsubscribeRefresh =
-    subscribeMarketEvent(
-      "MARKET_REFRESHED",
-      () => {
-        setSystemAlerts((prev) => [
-          "Market stream synchronized",
-          ...prev,
-        ].slice(0, 5));
-      }
-    );
+    subscribeMarketEvent("MARKET_REFRESHED", () => {
+  const msg = "Market stream synchronized";
+
+  setSystemAlerts((prev) => {
+    if (prev[0] === msg) return prev;
+    return [msg, ...prev].slice(0, 5);
+  });
+});
 
     const unsubscribeRegime =
   subscribeMarketEvent(
     "REGIME_CHANGED",
     () => {
-      setSystemAlerts((prev) => [
-        "Market regime transition detected",
-        ...prev,
-      ].slice(0, 5));
+      setSystemAlerts((prev) => {
+  const msg = "Market regime transition detected";
+
+  // prevent duplicate top message
+  if (prev[0] === msg) return prev;
+
+  return [msg, ...prev].slice(0, 5);
+});
     }
   );
 
@@ -71,10 +74,15 @@ export default function AlertStream() {
     subscribeMarketEvent(
       "STREAM_DISCONNECTED",
       () => {
-        setSystemAlerts((prev) => [
-          "Terminal stream disconnected",
-          ...prev,
-        ].slice(0, 5));
+
+        setSystemAlerts((prev) => {
+  const msg =  "Terminal stream disconnected";
+
+  // prevent duplicate top message
+  if (prev[0] === msg) return prev;
+
+  return [msg, ...prev].slice(0, 5);
+});
       }
     );
 
@@ -82,10 +90,15 @@ export default function AlertStream() {
     subscribeMarketEvent(
       "VOLATILITY_SPIKE",
       () => {
-        setSystemAlerts((prev) => [
-          "Market instability detected",
-          ...prev,
-        ].slice(0, 5));
+
+        setSystemAlerts((prev) => {
+  const msg = "Market instability detected";
+
+  // prevent duplicate top message
+  if (prev[0] === msg) return prev;
+
+  return [msg, ...prev].slice(0, 5);
+});
       }
     );
 

@@ -283,9 +283,6 @@ text-xs
           ))}
         </div>
 
-        <button className="text-xs text-gray-400 hover:text-white">
-          ⛶ Fullscreen
-        </button>
       </div>
 
       {/* CHART */}

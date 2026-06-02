@@ -180,9 +180,9 @@ function MarketTerminal() {
         </div>
 
         {/* PREMIUM RAIL (desktop only) */}
-        <div className="hidden xl:block xl:col-span-3">
+        <div className="col-span-1 xl:col-span-3">
           <PremiumRail />
-        </div>
+      </div>
       </div>
 
       {/* ---------------- MOBILE LEFT DRAWER ---------------- */}

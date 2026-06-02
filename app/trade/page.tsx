@@ -275,7 +275,7 @@ const newState = executeTrade({
 {/* MOBILE COIN LIST */}
 {!mobileCoinSelected && (
   <>
-    <div className="lg:hidden w-full border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex flex-col">
+    <div className="lg:hidden h-[420px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur overflow-hidden">
       <CoinList
         selectedCoin={selectedCoin.symbol}
         onSelectCoin={(coin) => {

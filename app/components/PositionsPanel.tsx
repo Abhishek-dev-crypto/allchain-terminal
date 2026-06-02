@@ -80,7 +80,7 @@ export default function PositionsPanel({
       </div>
 
       {/* CONTENT */}
-      <div className="h-[165px] overflow-y-auto">
+      <div className="min-h-[120px] max-h-[165px] overflow-y-auto">
 
         {/* OPEN POSITIONS */}
         {tab === 'positions' && (

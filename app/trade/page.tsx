@@ -257,7 +257,9 @@ const newState = executeTrade({
 
   /* ---------------- UI ---------------- */
  return (
-  <div className="bg-[#0B1220] text-white">
+  <div className="min-h-screen bg-[#0B1220] text-white">
+
+     <main className="flex-1">
 
     {/* 🔥 TOP TRADING ZONE */}
     <div className="flex flex-col lg:flex-row gap-2 p-2 border-b border-white/5">
@@ -343,6 +345,7 @@ const newState = executeTrade({
         volume={parseFloat(data?.volume || 0)}
       />
     </div>
+
   </div>
 )}
 
@@ -512,5 +515,6 @@ const newState = executeTrade({
 
   </div>
 </div>
+</main>
 </div>
 )}

@@ -254,10 +254,10 @@ function NavLinks({
       : 'hover:text-blue-400';
 
   const links = [
-  { name: 'T', href: '/trade' },
-  { name: 'M', href: '/market' },
-  { name: 'N', href: '/nft' },
-  { name: 'L', href: '/learn' },
+  { name: 'Trade', href: '/trade' },
+  { name: 'Market', href: '/market' },
+  { name: 'NFT', href: '/nft' },
+  { name: 'Learn', href: '/learn' },
 ];
 
   return (

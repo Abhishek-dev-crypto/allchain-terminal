@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import Button from './ui/button';
 
+
 export default function AIChatWidget({
   coinId,
   price,
@@ -24,11 +25,34 @@ export default function AIChatWidget({
   const [activeQuick, setActiveQuick] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const widgetRef = useRef<HTMLDivElement | null>(null);
 
   /* 🔥 AUTO SCROLL */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+  if (!open) return;
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      widgetRef.current &&
+      !widgetRef.current.contains(event.target as Node)
+    ) {
+      setOpen(false);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+
+  return () => {
+    document.removeEventListener(
+      'mousedown',
+      handleClickOutside
+    );
+  };
+}, [open]);
 
   /* 🔥 COIN LOGO */
   const getCoinLogo = () => {
@@ -104,7 +128,7 @@ export default function AIChatWidget({
   const confidence = getConfidence();
 
   return (
-    <>
+    <div ref={widgetRef}>
       {/* FLOAT BUTTON */}
       <div className="fixed bottom-5 right-5 z-50">
         <Button onClick={() => setOpen(!open)}>
@@ -253,6 +277,6 @@ export default function AIChatWidget({
           }
         }
       `}</style>
-    </>
+    </div>
   );
 }

@@ -66,8 +66,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
  const [tab, setTab] = useState<
-  'dashboard' | 'users' | 'premium'
+  'dashboard' | 'users' | 'premium' | 'trades'
 >('dashboard');
+
+const [selectedUser, setSelectedUser] = useState<string | null>(null);
   
   const router = useRouter();
 
@@ -193,22 +195,33 @@ useEffect(() => {
     return events.filter((e) => e.type === 'TRADE').length;
   }, [events]);
 
- const returningUsers = users.filter(
-  (u) => (u.totalTrades || 0) > 1
-).length;
+  const userTradeStats = useMemo(() => {
+  const map: Record<string, number> = {};
+
+  events.forEach((e) => {
+    if (e.type !== 'TRADE') return;
+    map[e.uid] = (map[e.uid] || 0) + 1;
+  });
+
+  return map;
+}, [events]);
+
+const returningUsers = useMemo(() => {
+  return Object.values(userTradeStats).filter((count) => count > 1).length;
+}, [userTradeStats]);
+
+const aiTrades = useMemo(() => {
+  return events.filter((e) => e.type === 'AI_EXECUTED').length;
+}, [events]);
+
+const aiUsage = useMemo(() => {
+  if (!totalTrades) return 0;
+  return (aiTrades / totalTrades) * 100;
+}, [aiTrades, totalTrades]);
 
     const avgTradesPerUser =
   users.length > 0
     ? totalTrades / users.length
-    : 0;
-
-   const aiTrades = events.filter(
-  (e) => e.type === 'AI_EXECUTED'
-).length;
-
-const aiUsage =
-  totalTrades > 0
-    ? (aiTrades / totalTrades) * 100
     : 0;
 
 
@@ -238,6 +251,65 @@ const topCoins = useMemo(() => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 }, [coinStats]);
+
+
+const userAnalytics = useMemo(() => {
+  const map: Record<string, {
+    trades: number;
+    buys: number;
+    sells: number;
+    ai: number;
+    volume: number;
+    lastActive: number;
+  }> = {};
+
+  events.forEach((e) => {
+    if (!e.uid) return;
+
+    if (!map[e.uid]) {
+      map[e.uid] = {
+        trades: 0,
+        buys: 0,
+        sells: 0,
+        ai: 0,
+        volume: 0,
+        lastActive: 0,
+      };
+    }
+
+    const user = map[e.uid];
+
+    if (e.type === "TRADE") {
+      user.trades += 1;
+      user.volume += e.amount || 0;
+
+      if (e.action === "BUY") user.buys += 1;
+      if (e.action === "SELL") user.sells += 1;
+    }
+
+    if (e.type === "AI_EXECUTED") {
+      user.ai += 1;
+    }
+
+    if (e.timestamp > user.lastActive) {
+      user.lastActive = e.timestamp;
+    }
+  });
+
+  return map;
+}, [events]);
+
+  const userMap = useMemo(() => {
+  const map: Record<string, string> = {};
+
+  users.forEach((u) => {
+    if (u.uid && u.email) {
+      map[u.uid] = u.email;
+    }
+  });
+
+  return map;
+}, [users]);
 
   useEffect(() => {
   if (!loadingAuth && currentUser?.email !== ADMIN_EMAIL) {
@@ -303,6 +375,17 @@ if (currentUser?.email !== ADMIN_EMAIL) {
             }`}
           >
             Premium Requests
+          </button>
+
+          <button
+              onClick={() => setTab('trades')}
+              className={`px-4 py-2 rounded text-sm ${
+              tab === 'trades'
+              ? 'bg-green-600 text-white'
+              : 'bg-neutral-900 text-gray-400'
+            }`}
+          >
+            User Trades
           </button>
 
       </div>
@@ -491,6 +574,58 @@ if (currentUser?.email !== ADMIN_EMAIL) {
 </>
 )}
 
+    {selectedUser && userAnalytics[selectedUser] && (
+  <div className="mb-4 p-4 rounded bg-black/40 border border-white/10">
+
+    <div className="flex justify-between items-center mb-3">
+      <h3 className="text-white font-semibold">
+        User Intelligence
+      </h3>
+
+      <button
+        onClick={() => setSelectedUser(null)}
+        className="text-xs text-gray-400 hover:text-white"
+      >
+        Close
+      </button>
+    </div>
+
+    <div className="grid grid-cols-2 gap-3 text-xs">
+
+      <div className="p-2 bg-white/5 rounded">
+        Trades: <span className="text-white">{userAnalytics[selectedUser].trades}</span>
+      </div>
+
+      <div className="p-2 bg-white/5 rounded">
+        Volume: <span className="text-green-400">
+          ₹{userAnalytics[selectedUser].volume.toFixed(0)}
+        </span>
+      </div>
+
+      <div className="p-2 bg-white/5 rounded">
+        BUYs: <span className="text-green-400">{userAnalytics[selectedUser].buys}</span>
+      </div>
+
+      <div className="p-2 bg-white/5 rounded">
+        SELLs: <span className="text-red-400">{userAnalytics[selectedUser].sells}</span>
+      </div>
+
+      <div className="p-2 bg-white/5 rounded col-span-2">
+        AI Usage: <span className="text-blue-400">{userAnalytics[selectedUser].ai}</span>
+      </div>
+
+      <div className="p-2 bg-white/5 rounded col-span-2">
+        Last Active:{" "}
+        <span className="text-white">
+          {new Date(userAnalytics[selectedUser].lastActive).toLocaleString()}
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+)}
+
     {/* USERS TAB */}
     {tab === 'users' && (
       <div className="bg-neutral-900 p-4 rounded">
@@ -501,56 +636,32 @@ if (currentUser?.email !== ADMIN_EMAIL) {
 
         <div className="space-y-3 max-h-[700px] overflow-y-auto">
 
-          {users.map((u, i) => (
-            <div
-              key={i}
-              className="border border-white/5 rounded p-3 text-xs"
-            >
+         {users.map((u, i) => (
+  <div
+    key={i}
+    onClick={() => setSelectedUser(u.uid || null)}
+    className="border border-white/5 rounded p-3 text-xs cursor-pointer hover:bg-white/5 transition"
+  >
+    <div className="flex items-center gap-3">
+      {u.photo && (
+        <img
+          src={u.photo}
+          className="w-10 h-10 rounded-full"
+        />
+      )}
 
-              <div className="flex items-center gap-3">
-
-                {u.photo && (
-                  <img
-                    src={u.photo}
-                    alt="profile"
-                    className="w-10 h-10 rounded-full"
-                  />
-                )}
-
-                <div>
-                  <p className="text-white font-medium">
-                    {u.name || 'Unknown'}
-                  </p>
-
-                  <p className="text-gray-400">
-                    {u.email || 'No Email'}
-                  </p>
-                </div>
-
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mt-3 text-gray-400">
-
-                <div>
-                  Device: {u.device || 'Unknown'}
-                </div>
-
-                <div>
-                  Platform: {u.platform || 'Unknown'}
-                </div>
-
-                <div>
-                  Language: {u.language || 'Unknown'}
-                </div>
-
-                <div>
-                  Timezone: {u.timezone || 'Unknown'}
-                </div>
-
-              </div>
-
-            </div>
-          ))}
+      <div>
+        <p className="text-white font-medium">
+          {u.name || 'Unknown'}
+        </p>
+        <p className="text-gray-400">
+          {u.email || 'No Email'}
+        </p>
+      </div>
+    </div>
+  </div>
+))}
+          
 
         </div>
       </div>
@@ -603,6 +714,20 @@ if (currentUser?.email !== ADMIN_EMAIL) {
 
         </div>
       ))}
+
+    </div>
+
+  </div>
+)}
+
+{tab === 'trades' && (
+  <div className="bg-neutral-900 p-4 rounded">
+
+    <h2 className="text-sm text-gray-400 mb-3">
+      📊 Trades per User
+    </h2>
+
+    <div className="space-y-2 max-h-[700px] overflow-y-auto">
 
     </div>
 

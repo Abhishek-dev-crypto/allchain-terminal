@@ -200,7 +200,7 @@ export default function GlobalNav() {
 
           {/* AUTH */}
           {user && (
-            <AuthSection user={user} onSignOut={handleSignOut} />
+            <AuthSection user={user} onSignOut={handleSignOut} onNavigate={() => setMenuOpen(false)} />
           )}
         </div>
 
@@ -236,6 +236,7 @@ export default function GlobalNav() {
               user={user}
               onSignOut={handleSignOut}
               mobile
+              onNavigate={() => setMenuOpen(false)}
             />
           )}
         </div>
@@ -288,10 +289,12 @@ function AuthSection({
   user,
   onSignOut,
   mobile = false,
+   onNavigate,
 }: {
   user: User;
   onSignOut: () => void;
   mobile?: boolean;
+  onNavigate?: () => void;
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);

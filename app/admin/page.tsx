@@ -217,10 +217,7 @@ const aiTrades = useMemo(() => {
   return events.filter((e) => e.type === "AI_EXECUTED").length;
 }, [events]);
 
-const aiUsage = useMemo(() => {
-  if (!totalTrades) return 0;
-  return (aiTrades / totalTrades) * 100;
-}, [aiTrades, totalTrades]);
+
 
     const avgTradesPerUser =
   users.length > 0
@@ -318,10 +315,6 @@ const userAnalytics = useMemo(() => {
   return events.filter((e) => e.type === "AI_EXECUTED");
 }, [events]);
 
-const aiInfluence = useMemo(() => {
-  if (!totalTrades) return 0;
-  return (aiExecutedTrades.length / totalTrades) * 100;
-}, [aiExecutedTrades, totalTrades]);
 
   useEffect(() => {
   if (!loadingAuth && currentUser?.email !== ADMIN_EMAIL) {
@@ -479,15 +472,6 @@ if (currentUser?.email !== ADMIN_EMAIL) {
             </p>
           </div>
 
-          <div className="bg-neutral-900 p-4 rounded">
-            <p className="text-gray-400 text-xs">
-              AI Usage
-            </p>
-
-            <p className="text-xl font-bold text-pink-400">
-              {aiUsage.toFixed(0)}%
-            </p>
-          </div>
 
           <div className="bg-neutral-900 p-4 rounded">
             <p className="text-gray-400 text-xs">
@@ -498,20 +482,6 @@ if (currentUser?.email !== ADMIN_EMAIL) {
               {topCoin?.[0]?.toUpperCase() || 'N/A'}
             </p>
           </div>
-
-          <div className="bg-neutral-900 p-4 rounded">
-  <p className="text-gray-400 text-xs">
-    AI Trading Influence
-  </p>
-
-  <p className="text-xl font-bold text-purple-400">
-    {aiInfluence.toFixed(0)}%
-  </p>
-
-  <p className="text-xs text-gray-500 mt-1">
-    AI_EXECUTED / Total Trades
-  </p>
-</div>
 
         </div>
 

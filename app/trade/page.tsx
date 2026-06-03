@@ -15,6 +15,7 @@ import TradePanel from '../components/TradePanel';
 import AIEngine from '../components/AIEngine';
 import OrderPanel from '../components/OrderPanel';
 import OrderBook from '../components/OrderBook';
+import AIChatWidget from '../components/AIChatWidget';
 
 import { executeTrade, derivePortfolio } from '@/lib/exchangeEngine';
 import { auth } from '@/lib/firebaseConfig';
@@ -523,5 +524,15 @@ const newState = executeTrade({
   trade={tradeModal}
   onClose={() => setTradeModal(null)}
 />
+
+ {/* FLOATING AI CHAT WIDGET */}
+<div className="fixed bottom-4 right-4 z-50">
+  <AIChatWidget
+    coinId={selectedCoin.symbol}
+    price={price}
+    change={change}
+    tradeScore={aiData?.tradeScore || 0}
+  />
+</div>
 </div>
 )}

@@ -12,10 +12,6 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   experimental: {},
 
   env: {

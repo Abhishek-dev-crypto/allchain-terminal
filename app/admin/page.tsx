@@ -211,7 +211,9 @@ const returningUsers = useMemo(() => {
 }, [userTradeStats]);
 
 const aiTrades = useMemo(() => {
-  return events.filter((e) => e.type === 'AI_EXECUTED').length;
+  return events.filter((e) =>
+    e.type?.toUpperCase().includes("AI")
+  ).length;
 }, [events]);
 
 const aiUsage = useMemo(() => {
@@ -728,6 +730,23 @@ if (currentUser?.email !== ADMIN_EMAIL) {
     </h2>
 
     <div className="space-y-2 max-h-[700px] overflow-y-auto">
+
+      {Object.entries(userTradeStats)
+        .sort((a, b) => b[1] - a[1])
+        .map(([uid, count]) => (
+          <div
+            key={uid}
+            className="flex justify-between text-sm border-b border-white/5 py-2"
+          >
+            <span className="text-gray-400">
+              {userMap[uid] || uid}
+            </span>
+
+            <span className="text-white font-semibold">
+              {count}
+            </span>
+          </div>
+        ))}
 
     </div>
 

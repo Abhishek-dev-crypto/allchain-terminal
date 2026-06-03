@@ -319,19 +319,19 @@ if (mobile) {
   return (
     <div className="flex flex-col space-y-2 px-2">
 
-      <Link href="/profile" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2">
+      <Link href="/profile" onClick={onNavigate} className="flex items-center gap-2">
         <UserIcon size={18} />
         Profile
       </Link>
 
       <div className="border-t border-white/10 my-2" />
 
-      <Link href="/help" onClick={() => setDropdownOpen(false)}>Help Center</Link>
-      <Link href="/support" onClick={() => setDropdownOpen(false)}>Support</Link>
-      <Link href="/security" onClick={() => setDropdownOpen(false)}>Security</Link>
-      <Link href="/terms" onClick={() => setDropdownOpen(false)}>Terms of Service</Link>
-      <Link href="/privacy" onClick={() => setDropdownOpen(false)}>Privacy Policy</Link>
-      <Link href="/legal" onClick={() => setDropdownOpen(false)}>Legal Notice</Link>
+      <Link href="/help" onClick={onNavigate}>Help Center</Link>
+      <Link href="/support" onClick={onNavigate}>Support</Link>
+      <Link href="/security" onClick={onNavigate}>Security</Link>
+      <Link href="/terms" onClick={onNavigate}>Terms of Service</Link>
+      <Link href="/privacy" onClick={onNavigate}>Privacy Policy</Link>
+      <Link href="/legal" onClick={onNavigate}>Legal Notice</Link>
 
       <div className="border-t border-white/10 my-2" />
 
@@ -368,8 +368,9 @@ if (mobile) {
 
     <Link
       href="/profile"
+      onClick={() => setDropdownOpen(false)}
       className="block px-4 py-2 hover:bg-gray-100"
-    >
+      >
       Profile
     </Link>
 
@@ -381,6 +382,7 @@ if (mobile) {
 
     <Link
       href="/help"
+       onClick={() => setDropdownOpen(false)}
       className="block px-4 py-2 hover:bg-gray-100"
     >
       Help Center
@@ -388,6 +390,7 @@ if (mobile) {
 
     <Link
       href="/support"
+       onClick={() => setDropdownOpen(false)}
       className="block px-4 py-2 hover:bg-gray-100"
     >
       Support
@@ -395,6 +398,7 @@ if (mobile) {
 
     <Link
       href="/security"
+       onClick={() => setDropdownOpen(false)}
       className="block px-4 py-2 hover:bg-gray-100"
     >
       Security
@@ -402,6 +406,7 @@ if (mobile) {
 
     <Link
       href="/terms"
+       onClick={() => setDropdownOpen(false)}
       className="block px-4 py-2 hover:bg-gray-100"
     >
       Terms of Service
@@ -409,6 +414,7 @@ if (mobile) {
 
     <Link
   href="/privacy"
+   onClick={() => setDropdownOpen(false)}
   className="block px-4 py-2 hover:bg-gray-100"
 >
   Privacy Policy
@@ -416,6 +422,7 @@ if (mobile) {
 
     <Link
       href="/legal"
+       onClick={() => setDropdownOpen(false)}
       className="block px-4 py-2 hover:bg-gray-100"
     >
       Legal

@@ -105,8 +105,11 @@ useEffect(() => {
     collection(db, 'users'),
     (snap) => {
       setUsers(
-        snap.docs.map((d) => d.data() as User)
-      );
+  snap.docs.map((d) => ({
+    uid: d.id,
+    ...(d.data() as User),
+  }))
+);
     },
     (error) => {
       console.error('Users Listener:', error);
@@ -211,9 +214,7 @@ const returningUsers = useMemo(() => {
 }, [userTradeStats]);
 
 const aiTrades = useMemo(() => {
-  return events.filter((e) =>
-    e.type?.toUpperCase().includes("AI")
-  ).length;
+  return events.filter((e) => e.type === "AI_EXECUTED").length;
 }, [events]);
 
 const aiUsage = useMemo(() => {

@@ -81,9 +81,12 @@ export default function TradePanel({
       return 'Insufficient balance';
     }
 
-    if (mode === 'sell' && qty > qtyOwned) {
-      return 'Insufficient holdings';
-    }
+    if (
+      mode === 'sell' &&
+      qty > qtyOwned + 0.00000001
+      ) {
+        return 'Insufficient holdings';
+      }
 
     return '';
   }, [
@@ -104,7 +107,7 @@ export default function TradePanel({
     if (mode === 'buy') {
       setAmount(balance.toFixed(0));
     } else {
-      setAmount(qtyOwned.toFixed(6));
+      setAmount(qtyOwned.toString());
     }
   };
 

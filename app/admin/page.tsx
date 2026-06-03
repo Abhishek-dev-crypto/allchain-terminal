@@ -314,6 +314,15 @@ const userAnalytics = useMemo(() => {
   return map;
 }, [users]);
 
+  const aiExecutedTrades = useMemo(() => {
+  return events.filter((e) => e.type === "AI_EXECUTED");
+}, [events]);
+
+const aiInfluence = useMemo(() => {
+  if (!totalTrades) return 0;
+  return (aiExecutedTrades.length / totalTrades) * 100;
+}, [aiExecutedTrades, totalTrades]);
+
   useEffect(() => {
   if (!loadingAuth && currentUser?.email !== ADMIN_EMAIL) {
     router.push('/');
@@ -490,6 +499,20 @@ if (currentUser?.email !== ADMIN_EMAIL) {
             </p>
           </div>
 
+          <div className="bg-neutral-900 p-4 rounded">
+  <p className="text-gray-400 text-xs">
+    AI Trading Influence
+  </p>
+
+  <p className="text-xl font-bold text-purple-400">
+    {aiInfluence.toFixed(0)}%
+  </p>
+
+  <p className="text-xs text-gray-500 mt-1">
+    AI_EXECUTED / Total Trades
+  </p>
+</div>
+
         </div>
 
         {/* LIVE FEED */}
@@ -502,49 +525,72 @@ if (currentUser?.email !== ADMIN_EMAIL) {
           <div className="space-y-2 max-h-[350px] overflow-y-auto">
 
            {events.map((e, i) => {
-  const action =
-    e.action ||
-    (e.type === "AI_EXECUTED"
-      ? "AI"
-      : e.type === "LOGIN"
-      ? "LOGIN"
-      : e.type === "TRADE"
-      ? "TRADE"
-      : e.type);
+              const action =
+              e.action ||
+              (e.type === "AI_EXECUTED"
+                ? "AI"
+                : e.type === "LOGIN"
+                ? "LOGIN"
+                : e.type === "TRADE"
+                ? "TRADE"
+                : e.type);
 
-  return (
-    <div
-      key={i}
-      className="flex justify-between text-xs border-b border-white/5 py-2"
-    >
-      <span
-        className={
-          action === "BUY"
-            ? "text-green-400"
-            : action === "SELL"
-            ? "text-red-400"
-            : action === "TRADE"
-            ? "text-blue-400"
-            : "text-gray-400"
-        }
-      >
-        {action}
-      </span>
+            return (
+              <div
+                  key={i}
+                  className="flex justify-between text-xs border-b border-white/5 py-2"
+                >
+                <span
+                   className={
+                      action === "BUY"
+                        ? "text-green-400"
+                        : action === "SELL"
+                        ? "text-red-400"
+                        : action === "TRADE"
+                        ? "text-blue-400"
+                        : "text-gray-400"
+                      }
+                      >
+                      {action}
+                </span>
 
-      <span className="text-white">{e.coin || "-"}</span>
+                <span className="text-white">{e.coin || "-"}</span>
 
-      <span className="text-gray-300">
-        ₹{(e.amount || 0).toFixed(0)}
-      </span>
+                  <span className="text-gray-300">
+                     ₹{(e.amount || 0).toFixed(0)}
+                  </span>
 
-      <span className="text-gray-500">
-        {new Date(e.timestamp).toLocaleTimeString()}
-      </span>
-    </div>
-  );
-})}
+                  <span className="text-gray-500">
+                    {new Date(e.timestamp).toLocaleTimeString()}
+                    </span>
+            </div>
+            );
+            })}
 
           </div>
+
+          <div className="bg-neutral-900 p-4 rounded">
+
+  <h2 className="text-sm text-gray-400 mb-3">
+    🧠 Event Type Distribution
+  </h2>
+
+  {Object.entries(
+    events.reduce((acc: Record<string, number>, e) => {
+      acc[e.type] = (acc[e.type] || 0) + 1;
+      return acc;
+    }, {})
+  ).map(([type, count]) => (
+    <div
+      key={type}
+      className="flex justify-between text-xs py-1 border-b border-white/5"
+    >
+      <span className="text-gray-400">{type}</span>
+      <span className="text-white">{count}</span>
+    </div>
+  ))}
+
+</div>
         </div>
 
         {/* TOP COINS */}

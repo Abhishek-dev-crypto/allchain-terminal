@@ -202,21 +202,6 @@ useEffect(() => {
     ? totalTrades / users.length
     : 0;
 
-  const coinStats: Record<string, number> = {};
-
-events.forEach((e) => {
-  if (!e.coin) return;
-
-  coinStats[e.coin] =
-    (coinStats[e.coin] || 0) + 1;
-});
-
-const topCoin =
-  Object.entries(coinStats)
-    .sort((a, b) => b[1] - a[1])[0];
-
-
-
    const aiTrades = events.filter(
   (e) => e.type === 'AI_EXECUTED'
 ).length;
@@ -233,30 +218,26 @@ const aiUsage =
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 }, [events]);
 
-  const topCoins = useMemo(() => {
-  const map: Record<string, number> = {};
-
-  const coinStats = useMemo(() => {
+ const coinStats = useMemo(() => {
   const map: Record<string, number> = {};
 
   events.forEach((e) => {
     if (!e.coin) return;
-    map[e.coin] = (map[e.coin] || 0) + 1;
+    map[e.coin] = (map[e.coin] || 0) + (e.amount || 0);
   });
 
   return map;
 }, [events]);
 
-  events.forEach((e) => {
-    if (!e.coin) return;
+const topCoin = useMemo(() => {
+  return Object.entries(coinStats).sort((a, b) => b[1] - a[1])[0];
+}, [coinStats]);
 
-    map[e.coin] = (map[e.coin] || 0) + (e.amount || 0);
-  });
-
-  return Object.entries(map)
+const topCoins = useMemo(() => {
+  return Object.entries(coinStats)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
-}, [events]);
+}, [coinStats]);
 
   useEffect(() => {
   if (!loadingAuth && currentUser?.email !== ADMIN_EMAIL) {
@@ -499,7 +480,7 @@ if (currentUser?.email !== ADMIN_EMAIL) {
                 </span>
 
                 <span className="text-green-400">
-                  ₹{volume.toFixed(0)}
+                  ₹{Number(volume || 0).toFixed(0)}
                 </span>
               </div>
             ))}

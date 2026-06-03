@@ -236,6 +236,17 @@ const aiUsage =
   const topCoins = useMemo(() => {
   const map: Record<string, number> = {};
 
+  const coinStats = useMemo(() => {
+  const map: Record<string, number> = {};
+
+  events.forEach((e) => {
+    if (!e.coin) return;
+    map[e.coin] = (map[e.coin] || 0) + 1;
+  });
+
+  return map;
+}, [events]);
+
   events.forEach((e) => {
     if (!e.coin) return;
 
@@ -423,38 +434,48 @@ if (currentUser?.email !== ADMIN_EMAIL) {
 
           <div className="space-y-2 max-h-[350px] overflow-y-auto">
 
-            {events.map((e, i) => (
-              <div
-                key={i}
-                className="flex justify-between text-xs border-b border-white/5 py-2"
-              >
+           {events.map((e, i) => {
+  const action =
+    e.action ||
+    (e.type === "AI_EXECUTED"
+      ? "AI"
+      : e.type === "LOGIN"
+      ? "LOGIN"
+      : e.type === "TRADE"
+      ? "TRADE"
+      : e.type);
 
-                <span
-                  className={
-                    e.action === 'BUY'
-                      ? 'text-green-400'
-                      : e.action === 'SELL'
-                      ? 'text-red-400'
-                      : 'text-gray-400'
-                  }
-                >
-                  {e.action || e.type}
-                </span>
+  return (
+    <div
+      key={i}
+      className="flex justify-between text-xs border-b border-white/5 py-2"
+    >
+      <span
+        className={
+          action === "BUY"
+            ? "text-green-400"
+            : action === "SELL"
+            ? "text-red-400"
+            : action === "TRADE"
+            ? "text-blue-400"
+            : "text-gray-400"
+        }
+      >
+        {action}
+      </span>
 
-                <span className="text-white">
-                  {e.coin || '-'}
-                </span>
+      <span className="text-white">{e.coin || "-"}</span>
 
-                <span className="text-gray-300">
-                  ₹{(e.amount || 0).toFixed(0)}
-                </span>
+      <span className="text-gray-300">
+        ₹{(e.amount || 0).toFixed(0)}
+      </span>
 
-                <span className="text-gray-500">
-                  {new Date(e.timestamp).toLocaleTimeString()}
-                </span>
-
-              </div>
-            ))}
+      <span className="text-gray-500">
+        {new Date(e.timestamp).toLocaleTimeString()}
+      </span>
+    </div>
+  );
+})}
 
           </div>
         </div>

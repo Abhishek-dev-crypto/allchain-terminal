@@ -192,13 +192,16 @@ export default function TradePage() {
     );
 
     await addDoc(collection(db, "events"), {
-      uid: auth.currentUser?.uid,
-      type: "TRADE",
-      action: type.toUpperCase(),
-      coin,
-      amount,
-      timestamp: Date.now(),
-    });
+  uid: auth.currentUser?.uid,
+  type: "TRADE",
+  action: type.toUpperCase(), // MUST be BUY or SELL
+  coin,
+  amount,
+  qty,
+  price,
+  orderType,
+  timestamp: Date.now(),
+});
 
     toast.success('Limit order placed');
 
@@ -242,12 +245,15 @@ const newState = executeTrade({
     { merge: true }
   );
 
-  await addDoc(collection(db, "events"), {
+ await addDoc(collection(db, "events"), {
   uid: auth.currentUser?.uid,
   type: "TRADE",
-  action: "BUY",
+  action: type.toUpperCase(), // MUST be BUY or SELL
   coin,
-  amount: amount,
+  amount,
+  qty,
+  price,
+  orderType,
   timestamp: Date.now(),
 });
 

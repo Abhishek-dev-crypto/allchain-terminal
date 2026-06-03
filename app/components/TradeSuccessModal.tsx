@@ -34,12 +34,12 @@ export default function TradeSuccessModal({
   const isProfit = pnl >= 0;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
 
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-[#020617] border border-green-500/20 rounded-2xl p-6 w-[360px] shadow-xl"
+        className="bg-[#020617] border border-green-500/20 rounded-2xl p-6 w-[95vw] max-w-[360px] shadow-xl"
       >
 
         {/* HEADER */}
@@ -63,7 +63,7 @@ export default function TradeSuccessModal({
 
           <div className="flex justify-between">
             <span>Price</span>
-            <span>${trade.price.toFixed(2)}</span>
+            <span>₹{trade.price.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between">
@@ -82,12 +82,12 @@ export default function TradeSuccessModal({
           {/* PnL */}
           <div className="flex justify-between">
             <span>Entry</span>
-            <span>${trade.price.toFixed(2)}</span>
+            <span>₹{trade.price.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between">
             <span>Current</span>
-            <span>${currentPrice.toFixed(2)}</span>
+            <span>₹{currentPrice.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between font-semibold">

@@ -192,12 +192,12 @@ export default function TradePage() {
     );
 
     await addDoc(collection(db, "events"), {
-    uid: auth.currentUser?.uid,
-    type: "TRADE",
-    action: type, // ✅ THIS is the fix
-    coin,
-    amount,
-    timestamp: Date.now(),
+      uid: auth.currentUser?.uid,
+      type: "TRADE",
+      action: type.toUpperCase(),
+      coin,
+      amount,
+      timestamp: Date.now(),
     });
 
     toast.success('Limit order placed');
@@ -225,6 +225,7 @@ const newState = executeTrade({
     amount,
     qty,
     price: marketPriceInr,
+     balance: newState.balance,
   });
 
   setEngineState(newState);
@@ -499,11 +500,6 @@ const newState = executeTrade({
       </div>
     </div>
 
-    <TradeSuccessModal
-  open={!!tradeModal}
-  trade={tradeModal}
-  onClose={() => setTradeModal(null)}
-/>
 
  <div className="col-span-12">
   <PositionsPanel
@@ -516,5 +512,10 @@ const newState = executeTrade({
   </div>
 </div>
 </main>
+<TradeSuccessModal
+  open={!!tradeModal}
+  trade={tradeModal}
+  onClose={() => setTradeModal(null)}
+/>
 </div>
 )}

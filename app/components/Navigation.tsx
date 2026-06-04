@@ -10,9 +10,6 @@ const Footer = () => {
           <h1 className="text-sm font-semibold">
             AllChain AI Market Infrastructure
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            Institutional-grade crypto intelligence & trading simulation platform
-          </p>
         </div>
 
         {/* Contact */}

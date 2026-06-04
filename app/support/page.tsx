@@ -149,9 +149,16 @@ export default function SupportPage() {
                 Support Email
               </p>
 
-              <p className="text-lg font-medium mt-1">
-                support@allchain.ai
-              </p>
+              <a
+                href="mailto:support@allchainlabs.com"
+                className="text-lg font-medium mt-1 text-blue-400 hover:underline"
+              >
+                support@allchainlabs.com
+              </a>
+            </div>
+
+            <div className="mb-4 p-3 rounded-lg border border-blue-500/20 bg-blue-500/10 text-sm text-blue-300">
+              For fastest response, include your registered account email.
             </div>
 
             {/* SUCCESS */}

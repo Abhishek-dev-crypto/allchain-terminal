@@ -10,6 +10,7 @@ import LiveTicker from "./components/LiveTicker";
 import MiniPreview from "./components/MiniPreview";
 import { doc, setDoc } from "firebase/firestore";
 import MarketPagePreview from "./components/MarketPagePreview";
+import { trackEvent } from "../lib/analytics";
 
 
 
@@ -326,10 +327,13 @@ useEffect(() => {
   return () => ws.close();
 }, []);
 
+ 
+
   /* =========================
      LOGIN
   ========================= */
  const login = async () => {
+  
   try {
     setAuthLoading(true); // 🔥 START LOADING
 
@@ -337,6 +341,10 @@ useEffect(() => {
     const result = await signInWithPopup(auth, provider);
 
     const user = result.user;
+
+    trackEvent("user_signup", {
+    method: "google",
+    });
 
     await setDoc(
       doc(db, "users", user.uid),
@@ -351,9 +359,10 @@ useEffect(() => {
     );
 
     // small delay so UX feels smooth (important)
-    setTimeout(() => {
+    
       router.push("/intel");
-    }, 800);
+      
+    
 
   } catch (err) {
     console.error("LOGIN ERROR", err);
@@ -402,7 +411,10 @@ useEffect(() => {
     </div>
 
    <button
-  onClick={login}
+  onClick={() => {
+    trackEvent("navbar_cta_click");
+    login();
+  }}
   className="px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold rounded-lg hover:scale-105 transition whitespace-nowrap"
   style={{
     backgroundColor: "#ffffff",
@@ -479,7 +491,10 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 
       <button
   id="start-trading-btn"
-  onClick={login}
+  onClick={() => {
+  trackEvent("hero_cta_click");
+  login();
+}}
   className="mt-5 px-6 py-3 text-sm font-medium bg-white text-black rounded-lg hover:scale-[1.03] transition"
 >
   Start Trading Free →
@@ -903,7 +918,10 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
         <div className="flex flex-col items-start lg:items-end gap-3">
 
           <button
-            onClick={login}
+            onClick={() => {
+  trackEvent("bottom_cta_click");
+  login();
+}}
             className="px-8 py-4 rounded-2xl bg-white text-black font-semibold hover:scale-[1.03] transition"
           >
             Start Risk-Free →

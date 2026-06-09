@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import {
   Activity,
   BrainCircuit,
@@ -8,6 +9,13 @@ import {
 } from 'lucide-react';
 
 export default function IntelPage() {
+
+  useEffect(() => {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", "intel_loaded");
+  }
+}, []);
+
   return (
     <div className="min-h-screen bg-black px-4 py-8 md:px-8">
 

@@ -7,7 +7,12 @@ import Script from "next/script";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import ClientWrapper from "./components/ClientWrapper";
 import Warning from "./components/Warning";
-import NavBar from "./components/Navigation";
+
+
+import { GenieProvider } from "@/app/contexts/GenieContext";
+import GenieOrb from "@/app/components/genie/GenieOrb";
+import GenieModal from "@/app/components/genie/GenieModal";
+import GenieOverlay from "@/app/components/genie/GenieOverlay";
 
 export default function RootLayout({
   children,
@@ -45,14 +50,22 @@ export default function RootLayout({
 
       <body>
         <NotificationProvider>
+           <ClientWrapper>
+          <GenieProvider>
           {pathname !== "/" && <Warning />}
 
-          <ClientWrapper>{children}</ClientWrapper>
+          {children}
 
+          <GenieOrb />
+          <GenieModal />
+          <GenieOverlay />
+            
           <div className="border-t border-black bg-yellow-300 px-4 py-2 text-center text-[10px] font-extrabold tracking-widest text-black">
             SIMULATION MODE ACTIVE — ALLCHAIN CURRENTLY OPERATES IN A PAPER
             TRADING ENVIRONMENT
           </div>
+          </GenieProvider>
+          </ClientWrapper>
         </NotificationProvider>
       </body>
     </html>

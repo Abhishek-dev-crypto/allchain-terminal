@@ -63,6 +63,12 @@ export default function TradePage() {
 
   const [currentPriceMap, setCurrentPriceMap] = useState<Record<string, number>>({});
 
+  useEffect(() => {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", "trade_loaded");
+  }
+}, []);
+
   useEffect(() => setMounted(true), []);
 
   /* ---------------- AUTH ---------------- */

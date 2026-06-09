@@ -68,6 +68,12 @@ function MarketTerminal() {
 
   const [lensOverlayOpen, setLensOverlayOpen] = useState(false);
 
+  useEffect(() => {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", "market_loaded");
+  }
+}, []);
+
   return (
     <div className="relative min-h-screen bg-[#0B1220] text-white">
 

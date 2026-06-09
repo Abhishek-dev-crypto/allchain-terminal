@@ -124,7 +124,7 @@ export default function GlobalNav() {
   if (!isClient) return null;
 
   return (
-    <nav className="bg-gray-900 text-white sticky top-0 z-[100] w-full border-b border-white/10 h-12">
+    <nav className="bg-gray-900 text-white sticky top-0 z-[200] w-full border-b border-white/10 h-12">
       <div className="flex items-center justify-between px-4 py-3 flex-wrap md:flex-nowrap">
 
         {navLoading && (

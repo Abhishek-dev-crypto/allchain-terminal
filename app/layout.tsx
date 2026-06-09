@@ -56,9 +56,9 @@ export default function RootLayout({
 
           {children}
 
-          <GenieOrb />
-          <GenieModal />
-          <GenieOverlay />
+          {false && <GenieOrb />}
+          {false && <GenieModal />}
+          {false && <GenieOverlay />}
             
           <div className="border-t border-black bg-yellow-300 px-4 py-2 text-center text-[10px] font-extrabold tracking-widest text-black">
             SIMULATION MODE ACTIVE — ALLCHAIN CURRENTLY OPERATES IN A PAPER

@@ -1,16 +1,24 @@
 "use client";
 
 import "./globals.css";
+import { usePathname } from "next/navigation";
 import Script from "next/script";
 
 import { NotificationProvider } from "./contexts/NotificationContext";
 import ClientWrapper from "./components/ClientWrapper";
+
+import { GenieRuntimeProvider} from "@/app/contexts/GenieRuntimeContext";
+import GenieOrb from "@/app/components/genie/GenieOrb";
+import GenieModal from "@/app/components/genie/GenieModal";
+import GenieOverlay from "@/app/components/genie/GenieOverlay";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
     <html lang="en">
       <body>
@@ -40,9 +48,18 @@ export default function RootLayout({
 
         <NotificationProvider>
           <ClientWrapper>
-            {children}
+            <GenieRuntimeProvider>
+
+              {children}
+
+              <GenieOrb />
+              <GenieModal />
+              <GenieOverlay />
+
+            </GenieRuntimeProvider>
           </ClientWrapper>
         </NotificationProvider>
+
       </body>
     </html>
   );

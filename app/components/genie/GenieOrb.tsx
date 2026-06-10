@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useGenie } from "../../../app/hooks/useGenie";
+import { useGenie } from "@/app/contexts/GenieRuntimeContext";
 
 export default function GenieOrb() {
   const { state, setState } = useGenie();

@@ -1,7 +1,6 @@
 "use client";
 
-
-import { useGenie } from "@/app/hooks/useGenie";
+import { useGenie } from "@/app/contexts/GenieRuntimeContext";
 import { genieTour } from "@/lib/genieTour";
 
 export default function GenieOverlay() {

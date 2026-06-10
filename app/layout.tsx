@@ -1,16 +1,14 @@
 "use client";
 
+
 import "./globals.css";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 
+
 import { NotificationProvider } from "./contexts/NotificationContext";
 import ClientWrapper from "./components/ClientWrapper";
 
-import { GenieRuntimeProvider} from "@/app/contexts/GenieRuntimeContext";
-import GenieOrb from "@/app/components/genie/GenieOrb";
-import GenieModal from "@/app/components/genie/GenieModal";
-import GenieOverlay from "@/app/components/genie/GenieOverlay";
 
 export default function RootLayout({
   children,
@@ -18,6 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
 
   return (
     <html lang="en">
@@ -27,6 +26,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
 
+
         <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
@@ -35,6 +35,7 @@ export default function RootLayout({
             gtag('config', 'G-W3ERYPVTN7');
           `}
         </Script>
+
 
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`
@@ -46,21 +47,23 @@ export default function RootLayout({
           `}
         </Script>
 
+
         <NotificationProvider>
           <ClientWrapper>
-            <GenieRuntimeProvider>
+            
+
 
               {children}
 
-              <GenieOrb />
-              <GenieModal />
-              <GenieOverlay />
 
-            </GenieRuntimeProvider>
+
+            
           </ClientWrapper>
         </NotificationProvider>
+
 
       </body>
     </html>
   );
 }
+

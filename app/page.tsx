@@ -37,12 +37,12 @@ export default function LandingPage() {
 }>(null);
   
   const [coins, setCoins] = useState([
-  { symbol: "BTC", price: 0, prev: 0 },
-  { symbol: "ETH", price: 0, prev: 0 },
-  { symbol: "SOL", price: 0, prev: 0 },
-  { symbol: "BNB", price: 0, prev: 0 },
-  { symbol: "XRP", price: 0, prev: 0 },
-  { symbol: "DOGE", price: 0, prev: 0 },
+  { symbol: "BTC", price: 60000, prev: 60000 },
+  { symbol: "ETH", price: 3200, prev: 3200 },
+  { symbol: "SOL", price: 140, prev: 140 },
+  { symbol: "BNB", price: 580, prev: 580 },
+  { symbol: "XRP", price: 0.6, prev: 0.6 },
+  { symbol: "DOGE", price: 0.15, prev: 0.15 },
 ]);
 const [paused, setPaused] = useState(false);
 const [terminalStatus, setTerminalStatus] = useState("idle");
@@ -313,22 +313,18 @@ useEffect(() => {
       )
     );
 
-    setPrice(newPrice); // optional global BTC anchor
+    setPrice(newPrice);
 
     setHistory((prev) => {
-  const updated = [...prev, newPrice];
-
-  // keep it bounded (important for performance + UI stability)
-  if (updated.length > 60) updated.shift();
-
-  return updated;
-});
+      const updated = [...prev, newPrice];
+      if (updated.length > 60) updated.shift();
+      return updated;
+    });
   };
+
   return () => ws.close();
 }, []);
-
  
-
   /* =========================
      LOGIN
   ========================= */
@@ -446,11 +442,8 @@ useEffect(() => {
     
 
          {/* HERO */}
- <motion.section
+ <section
   id="hero-section"
-  initial={{ opacity: 0, y: 30 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8 }}
  className="relative pt-2 md:pt-6 pb-12 md:pb-16 overflow-visible"
 >
 
@@ -575,13 +568,17 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
           className="w-full max-w-none scale-100 md:scale-[1.03] lg:scale-[1.1]"
         >
           <div id="preview-card">
-          <MiniPreview
-            price={activeCoin.price}
-            signal={displaySignal}
-            confidence={displayConfidence}
-            selectedCoin={selectedCoin}
-          />
 
+         {activeCoin?.price ? (
+  <MiniPreview
+    price={activeCoin.price}
+    signal={displaySignal}
+    confidence={displayConfidence}
+    selectedCoin={selectedCoin}
+  />
+) : (
+  <div className="h-[200px] bg-white/5 rounded-xl animate-pulse" />
+)}
           </div>
         </motion.div>
 
@@ -591,7 +588,7 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 
   </div>
 
-  </motion.section>
+  </section>
 
   {/* PREMIUM DIVIDER */}
 <div className="relative flex items-center justify-center my-14">

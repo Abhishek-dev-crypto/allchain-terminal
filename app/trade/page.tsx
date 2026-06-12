@@ -109,14 +109,19 @@ export default function TradePage() {
 
   /* ---------------- PRICE ---------------- */
   const { data } = useSWR(
-    selectedCoin.symbol,
-    async (symbol) => {
-      const res = await fetch(
-        `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`
-      );
-      return res.json();
+  selectedCoin.symbol,
+  async (symbol) => {
+    const res = await fetch(
+      `/api/market/ticker?symbol=${symbol}`
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch ticker");
     }
-  );
+
+    return res.json();
+  }
+);
 
   const price = parseFloat(data?.lastPrice || 0);
   const change = parseFloat(data?.priceChangePercent || 0);

@@ -7,7 +7,7 @@ import {
   ISeriesApi,
   UTCTimestamp,
 } from 'lightweight-charts';
-import { getKlines } from "@/lib/marketService";
+
 
 type Candle = {
   time: number;
@@ -57,9 +57,11 @@ export default function CandlestickChart({
 
   /* ---------------- INIT CHART ---------------- */
   useEffect(() => {
-    if (!containerRef.current) return;
+  if (!containerRef.current) return;
 
-    const chart = createChart(containerRef.current, {
+  if (chartRef.current) return;
+
+  const chart = createChart(containerRef.current, {
 
       localization: {
   locale: 'en-IN',
@@ -147,87 +149,113 @@ export default function CandlestickChart({
     });
 
     const resize = () => {
-  if (!containerRef.current || !chartRef.current) return;
+  const chart = chartRef.current;
+  const container = containerRef.current;
 
-  const { clientWidth, clientHeight } = containerRef.current;
+  if (!chart || !container) return;
 
-  chartRef.current.applyOptions({
-    width: clientWidth,
-    height: clientHeight,
-  });
+  try {
+    chart.applyOptions({
+      width: container.clientWidth,
+      height: container.clientHeight,
+    });
 
-  chartRef.current.timeScale().applyOptions({
-    barSpacing: BAR_SPACING,
-  });
+    chart.timeScale().applyOptions({
+      barSpacing: BAR_SPACING,
+    });
+  } catch {
+    console.warn("Resize skipped: chart disposed");
+  }
 };
 
     window.addEventListener('resize', resize);
 
     return () => {
-      window.removeEventListener('resize', resize);
-      chart.remove();
-    };
+  window.removeEventListener('resize', resize);
+
+  chart.remove();
+
+  chartRef.current = null;
+  candleRef.current = null;
+  volumeRef.current = null;
+
+  };
   }, []);
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    if (!symbol || !candleRef.current || !volumeRef.current) return;
+  if (!symbol || !candleRef.current || !volumeRef.current) return;
 
-    async function load() {
-      try { 
+  let active = true;
 
-       const data: Candle[] = await getKlines(symbol, timeframe);
+  async function load() {
+    try {
+      const res = await fetch(
+        `/api/market/klines?symbol=${symbol}&interval=${timeframe}`
+      );
 
-       const seen = new Set<number>();
+      if (!active) return;
 
-const candles = data
-  .map((d) => ({
-    time: d.time as UTCTimestamp,
-    open: d.open,
-    high: d.high,
-    low: d.low,
-    close: d.close,
-  }))
-  .filter((c) => {
-    if (seen.has(c.time)) return false;
-    seen.add(c.time);
-    return true;
-  })
-  .sort((a, b) => a.time - b.time);
+      const data: Candle[] = await res.json();
 
-const volumes = candles.map((d: any, i: number) => ({
-  time: d.time,
-  value: data[i]?.volume ?? 0,
-  color: d.close > d.open ? "#22c55e" : "#ef4444",
-}));
+      if (!active) return;
 
-        candleRef.current?.setData(candles);
-        volumeRef.current?.setData(volumes);
+      const seen = new Set<number>();
+
+      const candles = data
+        .map((d) => ({
+          time: d.time as UTCTimestamp,
+          open: d.open,
+          high: d.high,
+          low: d.low,
+          close: d.close,
+        }))
+        .filter((c) => {
+          if (seen.has(c.time)) return false;
+          seen.add(c.time);
+          return true;
+        })
+        .sort((a, b) => a.time - b.time);
+
+      const volumes = candles.map((d: any, i: number) => ({
+        time: d.time,
+        value: data[i]?.volume ?? 0,
+        color: d.close > d.open ? "#22c55e" : "#ef4444",
+      }));
+
+      if (!active) return;
+
+      candleRef.current?.setData(candles);
+      volumeRef.current?.setData(volumes);
+
+      requestAnimationFrame(() => {
+        if (!active) return;
 
         const chart = chartRef.current;
+
         if (!chart) return;
 
-        requestAnimationFrame(() => {
-          // 🚨 FIXED: USE TIME-BASED RANGE (NOT LOGICAL RANGE)
-         const from = candles[Math.max(0, candles.length - 120)]?.time;
-          const to = candles[candles.length - 1]?.time;
-
+        try {
           chart.timeScale().fitContent();
 
           chart.timeScale().applyOptions({
             barSpacing: BAR_SPACING,
           });
-        });
-
-        
-      } catch (err) {
-        console.error('Chart load error:', err);
-      }
+        } catch {
+          console.warn("Chart already disposed");
+        }
+      });
+    } catch (err) {
+      console.error("Chart load error:", err);
     }
+  }
 
-    
-    load();
-  }, [symbol, timeframe]);
+  load();
+
+  return () => {
+    active = false;
+  };
+}, [symbol, timeframe]);
 
   return (
     <div className="w-full bg-[#0B1220] rounded-lg overflow-hidden border border-white/5">

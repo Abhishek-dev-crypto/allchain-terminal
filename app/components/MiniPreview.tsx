@@ -395,7 +395,7 @@ useEffect(() => {
         </div>
       </div>
 
-    {/* ================= MARKET TELEMETRY ================= */}
+  
 <div className="grid grid-cols-2 md:grid-cols-5 gap-1 px-2 pb-2 text-[9px]">
 
   {telemetry.map((item, i) => (

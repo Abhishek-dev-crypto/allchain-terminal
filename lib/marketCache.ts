@@ -1,11 +1,26 @@
-export async function getCache(_key: string) {
-  return null;
+import "server-only";
+
+import { redis } from "@/lib/redis";
+
+export async function getCache(key: string) {
+  try {
+    return await redis.get(key);
+  } catch (err) {
+    console.error("Redis GET Error:", err);
+    return null;
+  }
 }
 
 export async function setCache(
-  _key: string,
-  _value: any,
-  _ttl = 5
+  key: string,
+  value: any,
+  ttl = 5
 ) {
-  return;
+  try {
+    await redis.set(key, value, {
+      ex: ttl,
+    });
+  } catch (err) {
+    console.error("Redis SET Error:", err);
+  }
 }

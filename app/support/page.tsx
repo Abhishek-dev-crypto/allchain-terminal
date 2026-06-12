@@ -123,24 +123,28 @@ export default function SupportPage() {
 
               <div className="flex gap-3">
 
-                <a
-                  href="https://x.com"
-                  target="_blank"
-                  className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
-                >
-                  X / Twitter
-                </a>
+  <a
+    href="https://x.com/allchainlabs"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
+  >
+    X / Twitter
+  </a>
 
-                <a
-                  href="https://discord.com"
-                  target="_blank"
-                  className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
-                >
-                  Discord
-                </a>
+  <a
+    href="https://discord.com/channels/1513928097865400530/1513928098356265106"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm"
+  >
+    Discord Community
+  </a>
 
-              </div>
-
+<div className="text-xs text-gray-500 mt-3">
+  Join 24/7 community support & updates
+</div>
+</div>
             </div>
 
             {/* SUPPORT EMAIL */}

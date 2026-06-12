@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 type Order = {
   price: number;
@@ -23,70 +23,78 @@ export default function OrderBook({ symbol }: Props) {
     asks: [],
   });
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectRef = useRef<NodeJS.Timeout | null>(null);
+ useEffect(() => {
+  if (!symbol) return;
 
-  useEffect(() => {
-    if (!symbol) return;
-
-    const lowerSymbol = symbol.toLowerCase();
-
-    const connect = () => {
-      if (wsRef.current) wsRef.current.close();
-
-      const ws = new WebSocket(
-        `wss://stream.binance.com:9443/ws/${lowerSymbol}@depth20@100ms`
+  const fetchOrderBook = async () => {
+    try {
+      const res = await fetch(
+        `/api/market/orderbook?symbol=${symbol}`
       );
 
-      wsRef.current = ws;
+      const data = await res.json();
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+      const asksRaw: Order[] = (data.asks || [])
+        .map((a: string[]) => ({
+          price: Number(a[0]),
+          qty: Number(a[1]),
+        }))
+        .sort(
+          (a: Order, b: Order) => a.price - b.price
+        )
+        .slice(0, 15);
 
-        const asksRaw: Order[] = (data.asks || [])
-          .map((a: string[]) => ({
-            price: Number(a[0]),
-            qty: Number(a[1]),
-          }))
-          .sort((a: { price: number; }, b: { price: number; }) => a.price - b.price)
-          .slice(0, 15);
+      const bidsRaw: Order[] = (data.bids || [])
+        .map((b: string[]) => ({
+          price: Number(b[0]),
+          qty: Number(b[1]),
+        }))
+        .sort(
+          (a: Order, b: Order) => b.price - a.price
+        )
+        .slice(0, 15);
 
-        const bidsRaw: Order[] = (data.bids || [])
-          .map((b: string[]) => ({
-            price: Number(b[0]),
-            qty: Number(b[1]),
-          }))
-          .sort((a: { price: number; }, b: { price: number; }) => b.price - a.price)
-          .slice(0, 15);
+      let askTotal = 0;
+      const asks = asksRaw.map((a) => {
+        askTotal += a.qty;
+        return {
+          ...a,
+          total: askTotal,
+        };
+      });
 
-        // cumulative totals
-        let askTotal = 0;
-        const asks = asksRaw.map((a) => {
-          askTotal += a.qty;
-          return { ...a, total: askTotal };
-        });
+      let bidTotal = 0;
+      const bids = bidsRaw.map((b) => {
+        bidTotal += b.qty;
+        return {
+          ...b,
+          total: bidTotal,
+        };
+      });
 
-        let bidTotal = 0;
-        const bids = bidsRaw.map((b) => {
-          bidTotal += b.qty;
-          return { ...b, total: bidTotal };
-        });
+      setOrderBook({
+        bids,
+        asks,
+      });
 
-        setOrderBook({ bids, asks });
-      };
+    } catch (err) {
+      console.error(
+        "OrderBook fetch error:",
+        err
+      );
+    }
+  };
 
-      ws.onclose = () => {
-        reconnectRef.current = setTimeout(connect, 1000);
-      };
-    };
+  fetchOrderBook();
 
-    connect();
+  const interval = setInterval(
+    fetchOrderBook,
+    3000
+  );
 
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-      if (reconnectRef.current) clearTimeout(reconnectRef.current);
-    };
-  }, [symbol]);
+  return () => clearInterval(interval);
+
+}, [symbol]);
 
   /* ================= DERIVED ================= */
 

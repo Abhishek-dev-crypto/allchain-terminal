@@ -63,8 +63,8 @@ export default function CoinList({ selectedCoin, onSelectCoin }: Props) {
       const universe = await getExchangeUniverse();
 
       const res = await fetch(
-        'https://api.binance.com/api/v3/ticker/24hr'
-      );
+  '/api/market/tickers'
+);
 
       const data = await res.json();
 
@@ -89,7 +89,7 @@ export default function CoinList({ selectedCoin, onSelectCoin }: Props) {
   };
 
   fetchData();
-  const interval = setInterval(fetchData, 5000);
+  const interval = setInterval(fetchData, 10000);
 
   return () => clearInterval(interval);
 }, []);

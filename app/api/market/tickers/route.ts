@@ -8,16 +8,25 @@ export async function GET() {
     const key = "tickers:24hr";
 
     const cached = await getCache(key);
-
-    if (cached) {
+    if (cached && Array.isArray(cached)) {
       return NextResponse.json(cached);
     }
 
-    const res = await fetch(
-      `${BINANCE_BASE}/ticker/24hr`
-    );
+    const res = await fetch(`${BINANCE_BASE}/ticker/24hr`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Binance HTTP ${res.status}`);
+    }
 
     const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid Binance response (not array)");
+    }
 
     await setCache(key, data, 10);
 
@@ -25,9 +34,6 @@ export async function GET() {
   } catch (err) {
     console.error("Ticker API Error:", err);
 
-    return NextResponse.json(
-      { error: "Failed to fetch tickers" },
-      { status: 500 }
-    );
+    return NextResponse.json([], { status: 200 }); // 🔥 NEVER BREAK UI
   }
 }

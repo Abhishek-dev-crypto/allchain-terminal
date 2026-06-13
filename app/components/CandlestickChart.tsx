@@ -39,6 +39,15 @@ const TIMEFRAMES = [
 
 const BAR_SPACING = 10;
 
+type ChartCandle = {
+  time: UTCTimestamp;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
 export default function CandlestickChart({
   symbol,
   coinName,
@@ -191,60 +200,74 @@ export default function CandlestickChart({
   async function load() {
     try {
       const res = await fetch(
-        `/api/market/klines?symbol=${symbol}&interval=${timeframe}`
-      );
+  `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=100`
+);
+
+if (!res.ok) {
+  throw new Error(`Binance HTTP ${res.status}`);
+}
 
       if (!active) return;
 
-      const data: Candle[] = await res.json();
+      const raw = await res.json();
+
+      if (!Array.isArray(raw)) {
+  console.error("Binance response:", raw);
+  return;
+}
+
+      if (!Array.isArray(raw)) {
+  throw new Error("Invalid Binance response");
+}
 
       if (!active) return;
 
       const seen = new Set<number>();
 
-      const candles = data
-        .map((d) => ({
-          time: d.time as UTCTimestamp,
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
-        }))
-        .filter((c) => {
+    const candles: ChartCandle[] = raw
+  .map((d: any[]) => ({
+    time: Math.floor(d[0] / 1000) as UTCTimestamp,
+    open: Number(d[1]),
+    high: Number(d[2]),
+    low: Number(d[3]),
+    close: Number(d[4]),
+    volume: Number(d[5]),
+  }))
+        .filter((c: ChartCandle) => {
           if (seen.has(c.time)) return false;
           seen.add(c.time);
           return true;
         })
-        .sort((a, b) => a.time - b.time);
+        .sort((a: ChartCandle, b: ChartCandle) => a.time - b.time);
 
-      const volumes = candles.map((d: any, i: number) => ({
-        time: d.time,
-        value: data[i]?.volume ?? 0,
-        color: d.close > d.open ? "#22c55e" : "#ef4444",
-      }));
+      const volumes = candles.map((d: ChartCandle) => ({
+  time: d.time,
+  value: d.volume,
+  color: d.close > d.open ? "#22c55e" : "#ef4444",
+}));
 
       if (!active) return;
 
       candleRef.current?.setData(candles);
       volumeRef.current?.setData(volumes);
 
-      requestAnimationFrame(() => {
-        if (!active) return;
+     requestAnimationFrame(() => {
+  if (!active) return;
 
-        const chart = chartRef.current;
+  const chart = chartRef.current;
 
-        if (!chart) return;
+  if (!chart) return;
 
-        try {
-          chart.timeScale().fitContent();
+  try {
+    chart.timeScale().scrollToRealTime();
 
-          chart.timeScale().applyOptions({
-            barSpacing: BAR_SPACING,
-          });
-        } catch {
-          console.warn("Chart already disposed");
-        }
-      });
+    chart.timeScale().applyOptions({
+      barSpacing: BAR_SPACING,
+    });
+  } catch {
+    console.warn("Chart already disposed");
+  }
+});
     } catch (err) {
       console.error("Chart load error:", err);
     }
@@ -252,8 +275,11 @@ export default function CandlestickChart({
 
   load();
 
+   const intervalId = setInterval(load, 5000);
+
   return () => {
     active = false;
+    clearInterval(intervalId);
   };
 }, [symbol, timeframe]);
 

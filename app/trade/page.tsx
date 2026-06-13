@@ -112,7 +112,7 @@ export default function TradePage() {
   selectedCoin.symbol,
   async (symbol) => {
     const res = await fetch(
-      `/api/market/ticker?symbol=${symbol}`
+  `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`
     );
 
     if (!res.ok) {

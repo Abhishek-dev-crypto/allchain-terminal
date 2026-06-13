@@ -29,7 +29,7 @@ export default function OrderBook({ symbol }: Props) {
   const fetchOrderBook = async () => {
     try {
       const res = await fetch(
-        `/api/market/orderbook?symbol=${symbol}`
+  `https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=20`
       );
 
       const data = await res.json();

@@ -62,8 +62,7 @@ export default function CoinList({ selectedCoin, onSelectCoin }: Props) {
     try {
       const universe = await getExchangeUniverse();
 
-      const res = await fetch(
-  '/api/market/tickers'
+      const res = await fetch("https://api.binance.com/api/v3/ticker/24hr"
 );
 
       const data = await res.json();

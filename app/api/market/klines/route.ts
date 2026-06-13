@@ -59,12 +59,14 @@ const result = data.map((c: any) => ({
     });
 
     return NextResponse.json(result);
-  } catch (error) {
-    console.error("Klines API Error:", error);
+  } catch (error: any) {
+  console.error("Klines API Error:", error);
 
-    return NextResponse.json(
-      { error: "Failed to load klines" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      error: String(error),
+    },
+    { status: 500 }
+  );
+}
 }

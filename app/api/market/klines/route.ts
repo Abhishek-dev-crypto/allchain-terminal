@@ -28,16 +28,30 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    const data = await res.json();
+    if (!res.ok) {
+  throw new Error(
+    `Binance HTTP ${res.status}`
+  );
+}
 
-    const result = data.map((c: any) => ({
-      time: Math.floor(c[0] / 1000),
-      open: parseFloat(c[1]),
-      high: parseFloat(c[2]),
-      low: parseFloat(c[3]),
-      close: parseFloat(c[4]),
-      volume: parseFloat(c[5]),
-    }));
+   const data = await res.json();
+
+if (!Array.isArray(data)) {
+  console.error("Invalid Binance klines response:", data);
+
+  return NextResponse.json([], {
+    status: 200,
+  });
+}
+
+const result = data.map((c: any) => ({
+  time: Math.floor(c[0] / 1000),
+  open: parseFloat(c[1]),
+  high: parseFloat(c[2]),
+  low: parseFloat(c[3]),
+  close: parseFloat(c[4]),
+  volume: parseFloat(c[5]),
+}));
 
     // 3. Store in Redis
     await redis.set(cacheKey, result, {

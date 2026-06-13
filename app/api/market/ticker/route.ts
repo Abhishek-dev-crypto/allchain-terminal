@@ -4,9 +4,11 @@ import { getCache, setCache } from "@/lib/marketCache";
 const BINANCE_BASE = "https://api.binance.com/api/v3";
 
 export async function GET(req: Request) {
-  try {
+  
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
+
+    try {
 
     if (!symbol) {
       return NextResponse.json(
@@ -52,15 +54,15 @@ export async function GET(req: Request) {
     console.error("Ticker API Error:", error);
 
     return NextResponse.json(
-      {
-        symbol: Symbol || null,
-        lastPrice: 0,
-        priceChangePercent: 0,
-        highPrice: 0,
-        lowPrice: 0,
-        volume: 0,
-      },
-      { status: 200 } // 🔥 UI NEVER BREAKS
-    );
+  {
+    symbol: symbol || null,
+    lastPrice: 0,
+    priceChangePercent: 0,
+    highPrice: 0,
+    lowPrice: 0,
+    volume: 0,
+  },
+  { status: 200 }
+);
   }
 }

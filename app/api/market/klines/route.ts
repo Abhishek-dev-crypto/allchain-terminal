@@ -28,6 +28,12 @@ export async function GET(req: NextRequest) {
       }
     );
 
+    console.log(
+  "BINANCE STATUS:",
+  res.status,
+  res.statusText
+);
+
     if (!res.ok) {
   throw new Error(
     `Binance HTTP ${res.status}`
@@ -35,6 +41,11 @@ export async function GET(req: NextRequest) {
 }
 
    const data = await res.json();
+
+   console.log(
+  "BINANCE RESPONSE:",
+  JSON.stringify(data).slice(0, 500)
+);
 
 if (!Array.isArray(data)) {
   console.error("Invalid Binance klines response:", data);

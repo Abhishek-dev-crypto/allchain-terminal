@@ -8,6 +8,8 @@ import { getCoinGeckoPrice } from "./coinGeckoClient";
 import { buildMarketContextFromCandles } from "./cache/marketContext";
 import { cacheOrchestrator } from "./cache/cacheOrchestrator";
 
+import { startMarketWorker } from "./backgroundMarketWorker";
+
 class MarketEngine {
   private static instance: MarketEngine;
 
@@ -250,6 +252,6 @@ async getSnapshot(symbol: string): Promise<MarketSnapshot> {
 
 export const marketEngine = MarketEngine.getInstance();
 
-import { startMarketWorker } from "./backgroundMarketWorker";
-
-startMarketWorker();
+if (process.env.NODE_ENV !== "production") {
+  startMarketWorker();
+}

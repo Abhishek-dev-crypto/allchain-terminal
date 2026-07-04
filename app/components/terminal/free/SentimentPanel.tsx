@@ -25,8 +25,6 @@ type Narrative = {
   examples: string[];
   };
 
-
-
 export default function SentimentPanel() {
   const [items, setItems] = useState<NewsItem[]>([]);
 const [score, setScore] = useState(50);

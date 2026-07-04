@@ -10,9 +10,13 @@ import type { Coin } from "@/lib/types/coin";
 import type { FreeNarrative } from "@/lib/intel/freeNarrativeEngine";
 import { useMarketData } from "@/app/hooks/useMarketData";
 
+import { useMarket } from "@/lib/providers/MarketProvider";
+
 export default function AINarrativeEngine() {
 
  const { data, isLoading, error } = useMarketData();
+
+ const { engine } = useMarket();
 
 const coins = data ?? [];
   /**
@@ -25,7 +29,7 @@ const coins = data ?? [];
    * 🧠 Narrative Intelligence Layer
    */
  const narratives: FreeNarrative[] = useMemo(() => {
-  return buildFreeNarrativeEngine(snapshot);
+  return buildFreeNarrativeEngine(engine);
 }, [snapshot]);
 
   /**

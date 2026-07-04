@@ -1,4 +1,4 @@
-import type { MarketSnapshot } from "@/lib/intel/useMarketSnapshot";
+import type { MarketEngineOutput } from "@/lib/intel/marketEngine";
 
 export type FreeNarrative = {
   title: string;
@@ -10,6 +10,7 @@ export type FreeNarrative = {
   };
 
   state: string;
+
   flow: {
     type: string;
     score: number;
@@ -33,48 +34,55 @@ function mapSentiment(mood: string) {
 }
 
 export function buildFreeNarrativeEngine(
-  snapshot: MarketSnapshot
+  engine: MarketEngineOutput
 ): FreeNarrative[] {
-  const { momentum, flow, volatility, dominance, marketState, breadth } =
-    snapshot;
+  if (!engine || !engine.leaders) return [];
 
-  if (!snapshot.coins?.length) return [];
-
-  const sentiment = mapSentiment(marketState.mood);
-  const state = mapState(marketState.conviction);
+  const {
+    momentum,
+    flows,
+    volatility,
+    regime,
+    positiveBreadth,
+    signals,
+    leaders,
+    btcDominance,
+    ethDominance,
+    altStrength,
+  } = engine;
 
   return [
     {
       title: "Market Momentum Pulse",
 
       insight:
-        marketState.mood === "RISK_ON"
+        engine.regime === "RISK_ON"
           ? "Market momentum is expanding across assets."
-          : marketState.mood === "RISK_OFF"
+          : engine.regime === "RISK_OFF"
           ? "Market momentum is weakening under selling pressure."
           : "Market momentum is neutral and range-bound.",
 
       momentum: {
-        score: momentum.strength,
-        direction: momentum.direction,
+        score: signals.momentum.strength,
+        direction: signals.momentum.direction,
       },
 
-      state,
+      state: regime,
 
       flow: {
-        type: flow.state,
-        score: flow.score,
+        type: signals.flow.state,
+        score: signals.flow.score,
       },
 
-      sentiment,
+      sentiment: signals.sentiment,
 
-      assets: momentum.leaders.map((c) => c.symbol),
+      assets: leaders.map((c) => c.symbol),
 
       reasoning: [
-        `${breadth.greenPercent}% assets positive`,
-        `Momentum: ${momentum.direction}`,
-        `Volatility: ${volatility.level}`,
-        `Market mood: ${marketState.mood}`,
+        `${positiveBreadth}% assets positive`,
+        `Momentum: ${signals.momentum.direction}`,
+        `Volatility: ${volatility}`,
+        `Flow: ${signals.flow.state}`,
       ],
     },
 
@@ -82,34 +90,34 @@ export function buildFreeNarrativeEngine(
       title: "Large Cap Structure",
 
       insight:
-        dominance.btc > 50
+        btcDominance > 50
           ? "Bitcoin dominance is controlling market direction."
           : "Altcoins are gaining relative strength.",
 
       momentum: {
-        score: dominance.altStrength,
-        direction: momentum.direction,
+        score: altStrength,
+        direction: signals.momentum.direction,
       },
 
-      state,
+      state: regime,
 
       flow: {
-        type: flow.state,
-        score: flow.score,
+        type: signals.flow.state,
+        score: signals.flow.score,
       },
 
-      sentiment,
+      sentiment: signals.sentiment,
 
       assets: [
-        `BTC ${dominance.btc}%`,
-        `ETH ${dominance.eth}%`,
-        `ALTS ${dominance.altStrength}%`,
+        `BTC ${btcDominance}%`,
+        `ETH ${ethDominance}%`,
+        `ALTS ${altStrength}%`,
       ],
 
       reasoning: [
-        `BTC dominance ${dominance.btc}%`,
-        `ETH dominance ${dominance.eth}%`,
-        `Alt strength ${dominance.altStrength}%`,
+        `BTC dominance ${btcDominance}%`,
+        `ETH dominance ${ethDominance}%`,
+        `Alt strength ${altStrength}%`,
       ],
     },
   ];

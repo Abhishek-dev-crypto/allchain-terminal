@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+/*import { useEffect, useState } from "react";
 import { useGenie } from "@/app/contexts/GenieRuntimeContext";
 
 export default function GenieOrb() {
@@ -28,4 +28,4 @@ export default function GenieOrb() {
       </div>
     </div>
   );
-}
+}*/

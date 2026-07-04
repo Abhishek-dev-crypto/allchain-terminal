@@ -4,208 +4,134 @@ import {
   createContext,
   useContext,
   useMemo,
-    useState,
-    useEffect,
-    useRef,
+  useState,
+  useEffect,
+  useRef,
   ReactNode,
 } from "react";
 
-import { useMarketSnapshot } from "@/lib/intel/useMarketSnapshot";
+import type { Coin } from "@/lib/types/coin";
+import type { MarketContextType } from "@/lib/types/market";
 
 import { buildMarketEngine } from "@/lib/intel/marketEngine";
-
 import { buildMarketIntelligence } from "@/lib/intel/buildMarketIntelligence";
-
 import { buildFreeNarrativeEngine } from "@/lib/intel/freeNarrativeEngine";
 
-import { fetchMarketStream } from "@/lib/streams/marketStream";
-
-import type { Coin } from "@/lib/types/coin";
-
-import type {
-  MarketContextType,
-} from "@/lib/types/market";
-
-import {
-  emitMarketEvent,
-} from "@/lib/events/marketEvents";
-
-/* ----------------------------- */
-/* Types                         */
-/* ----------------------------- */
-
-
-
-type MarketProviderProps = {
-  children: ReactNode;
-};
-
+import { getMarketSnapshot } from "@/lib/intel/core/marketSnapshotStore";
+import { emitMarketEvent } from "@/lib/events/marketEvents";
 
 /* ----------------------------- */
 /* Context                       */
 /* ----------------------------- */
 
-const MarketContext = createContext<MarketContextType | null>(
-  null
-);
+const MarketContext = createContext<MarketContextType | null>(null);
+
+type MarketProviderProps = {
+  children: ReactNode;
+};
 
 /* ----------------------------- */
 /* Provider                      */
 /* ----------------------------- */
 
-export function MarketProvider({
-  children,
-}: MarketProviderProps) {
-  /* ----------------------------- */
-  /* Snapshot                      */
-  /* ----------------------------- */
-
-  const [coins, setCoins] = useState<Coin[]>([]);
-
-const [loading, setLoading] = useState(true);
-
-const [lastUpdated, setLastUpdated] = useState(Date.now());
-
-const [streamStatus, setStreamStatus] =
-  useState<MarketContextType["streamStatus"]>(
-    "CONNECTED"
-  );
-
-  const [regimeHistory, setRegimeHistory] =
-  useState<
-    {
-      regime: string;
-      timestamp: number;
-    }[]
+export function MarketProvider({ children }: MarketProviderProps) {
+ const [snapshot, setSnapshot] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(Date.now());
+  const [regimeHistory, setRegimeHistory] = useState<
+    { regime: string; timestamp: number }[]
   >([]);
 
+  /* ----------------------------- */
+  /* SINGLE SNAPSHOT LOOP         */
+  /* ----------------------------- */
+
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
- async function loadMarket() {
-  try {
-    setStreamStatus("SYNCING");
+    async function load() {
+      try {
+        setLoading(true);
 
-    setLoading(true);
+        const data = await getMarketSnapshot();
 
-    const result = await fetchMarketStream();
+        if (!mounted) return;
 
-    if (!mounted) return;
+        setSnapshot(data);
+        setLastUpdated(data.timestamp);
 
-    setCoins(result.coins);
-
-    emitMarketEvent("MARKET_REFRESHED");
-
-    setLastUpdated(result.timestamp);
-
-    const nextStatus =
-  result.coins.length > 0
-    ? "CONNECTED"
-    : "DEGRADED";
-
-setStreamStatus(nextStatus);
-
-if (nextStatus === "DEGRADED") {
-  emitMarketEvent("VOLATILITY_SPIKE");
-}
-
-  } catch (error) {
-    console.error("Provider stream error:", error);
-
-    setStreamStatus("DISCONNECTED");
-
-    emitMarketEvent(
-  "STREAM_DISCONNECTED"
-);
-
-  } finally {
-    if (mounted) {
-      setLoading(false);
+        emitMarketEvent("MARKET_REFRESHED");
+      } catch (err) {
+        console.error("Snapshot error:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
-  }
-}
 
-  loadMarket();
+    load();
 
-  const interval = setInterval(() => {
-    loadMarket();
-  }, 60000);
+    const interval = setInterval(load, 60000);
 
-  return () => {
-    mounted = false;
-
-    clearInterval(interval);
-  };
-}, []);
-
-  const snapshot = useMarketSnapshot(coins);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   /* ----------------------------- */
-  /* Engine                        */
+  /* DERIVED DATA                 */
   /* ----------------------------- */
+
+  const coins: Coin[] = snapshot?.coins || [];
 
   const engine = useMemo(() => {
     return buildMarketEngine(coins);
   }, [coins]);
 
-  const previousRegime =
-  useRef(engine.regime);
-
-  /* ----------------------------- */
-  /* Intelligence                  */
-  /* ----------------------------- */
-
   const intelligence = useMemo(() => {
     return buildMarketIntelligence(engine);
   }, [engine]);
 
-  /* ----------------------------- */
-  /* Narratives                    */
-  /* ----------------------------- */
-
   const narratives = useMemo(() => {
-    return buildFreeNarrativeEngine(snapshot);
-  }, [snapshot]);
+  if (!snapshot) return [];
+  return buildFreeNarrativeEngine(engine);
+}, [snapshot]);
 
-  
+  const previousRegime = useRef(engine.regime);
 
- useEffect(() => {
-  if (
-    previousRegime.current !==
-    engine.regime
-  ) {
-    emitMarketEvent(
-      "REGIME_CHANGED"
-    );
+  useEffect(() => {
+    if (previousRegime.current !== engine.regime) {
+      emitMarketEvent("REGIME_CHANGED");
 
-    setRegimeHistory((prev) => [
-      {
-        regime: engine.regime,
-        timestamp: Date.now(),
-      },
-      ...prev,
-    ].slice(0, 25));
+      setRegimeHistory((prev) =>
+        [
+          {
+            regime: engine.regime,
+            timestamp: Date.now(),
+          },
+          ...prev,
+        ].slice(0, 25)
+      );
 
-    previousRegime.current =
-      engine.regime;
-  }
-}, [engine.regime]);
-
+      previousRegime.current = engine.regime;
+    }
+  }, [engine.regime]);
 
   /* ----------------------------- */
-  /* Context Value                 */
+  /* CONTEXT VALUE                */
   /* ----------------------------- */
-const value: MarketContextType = {
-  coins,
-  snapshot,
-  engine,
-  intelligence,
-  narratives,
+
+  const value: MarketContextType = {
+    coins,
+    snapshot,
+    engine,
+    intelligence,
+    narratives,
     regimeHistory,
-  loading,
-  lastUpdated,
-  streamStatus,
-};
+    loading,
+    lastUpdated,
+    streamStatus: "CONNECTED",
+  };
 
   return (
     <MarketContext.Provider value={value}>
@@ -215,16 +141,14 @@ const value: MarketContextType = {
 }
 
 /* ----------------------------- */
-/* Hook                           */
+/* Hook                          */
 /* ----------------------------- */
 
 export function useMarket() {
   const context = useContext(MarketContext);
 
   if (!context) {
-    throw new Error(
-      "useMarket must be used within MarketProvider"
-    );
+    throw new Error("useMarket must be used within MarketProvider");
   }
 
   return context;

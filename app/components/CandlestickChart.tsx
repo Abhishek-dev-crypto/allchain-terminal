@@ -1,22 +1,14 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createChart,
   IChartApi,
   ISeriesApi,
   UTCTimestamp,
+  CandlestickData,
+  HistogramData,
 } from 'lightweight-charts';
-
-
-type Candle = {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-};
 
 type Props = {
   symbol: string;
@@ -28,27 +20,11 @@ type Props = {
   volume?: number;
 };
 
-const TIMEFRAMES = [
-  { label: '1m', value: '1m' },
-  { label: '5m', value: '5m' },
-  { label: '15m', value: '15m' },
-  { label: '1h', value: '1h' },
-  { label: '4h', value: '4h' },
-  { label: '1d', value: '1d' },
-];
+const TIMEFRAMES = ['1m', '5m', '15m','30m', '1h', '4h', '1d'] as const;
 
 const BAR_SPACING = 10;
 
-type ChartCandle = {
-  time: UTCTimestamp;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-};
-
-export default function CandlestickChart({
+const CandlestickChart = React.memo(function CandlestickChart({
   symbol,
   coinName,
   price,
@@ -58,24 +34,18 @@ export default function CandlestickChart({
   volume,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeRef = useRef<ISeriesApi<'Histogram'> | null>(null);
 
-  const [timeframe, setTimeframe] = useState('1m');
+  const [timeframe, setTimeframe] = useState<(typeof TIMEFRAMES)[number]>('1m');
 
   /* ---------------- INIT CHART ---------------- */
   useEffect(() => {
-  if (!containerRef.current) return;
+    if (!containerRef.current || chartRef.current) return;
 
-  if (chartRef.current) return;
-
-  const chart = createChart(containerRef.current, {
-
-      localization: {
-  locale: 'en-IN',
-},
-
+    const chart = createChart(containerRef.current, {
       layout: {
         background: { color: '#0B1220' },
         textColor: '#d1d5db',
@@ -84,54 +54,44 @@ export default function CandlestickChart({
         vertLines: { color: '#1f2937' },
         horzLines: { color: '#1f2937' },
       },
-
       width: containerRef.current.clientWidth,
-      height: containerRef.current?.clientHeight || 400,
-
+      height: containerRef.current.clientHeight || 400,
       crosshair: { mode: 1 },
 
-      // 🔥 CLEAN BINANCE-STYLE TIME SCALE
-      timeScale: {
-  borderColor: '#2b2b43',
-
-  timeVisible: true,
-  secondsVisible: false,
-
-  rightBarStaysOnScroll: true,
-  fixLeftEdge: true,
-  fixRightEdge: true,
-
-  tickMarkFormatter: (
-  time: UTCTimestamp,
-  tickMarkType: any,
-  locale: string
-) => {
-    return new Date(time * 1000).toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+      handleScroll: {
+    mouseWheel: false,
+    pressedMouseMove: false,
+    horzTouchDrag: false,
+    vertTouchDrag: false,
   },
 
-  barSpacing: BAR_SPACING,
+  handleScale: {
+    axisPressedMouseMove: false,
+    mouseWheel: false,
+    pinch: false,
+    axisDoubleClickReset: false,
+  },
+
+      timeScale: {
+      borderColor: '#2b2b43',
+      timeVisible: true,
+      secondsVisible: false,
+      barSpacing: BAR_SPACING,
+
+      tickMarkFormatter: (time: number) => {
+  return new Date(time * 1000).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Kolkata",
+  });
 },
-
-      handleScale: {
-        mouseWheel: window.innerWidth > 768,
-        pinch: false,
-        axisPressedMouseMove: false,
-      },
-
-      handleScroll: {
-        mouseWheel: window.innerWidth > 768,
-        pressedMouseMove: true,
-        horzTouchDrag: true,
-      },
+},
     });
 
     chartRef.current = chart;
 
-    const candleSeries = chart.addCandlestickSeries({
+    candleRef.current = chart.addCandlestickSeries({
       upColor: '#22c55e',
       downColor: '#ef4444',
       borderVisible: false,
@@ -139,211 +99,156 @@ export default function CandlestickChart({
       wickDownColor: '#ef4444',
     });
 
-    candleRef.current = candleSeries;
-
-    const volumeSeries = chart.addHistogramSeries({
+    volumeRef.current = chart.addHistogramSeries({
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume',
-      base: 0,
     });
 
-    volumeRef.current = volumeSeries;
-
-    volumeSeries.priceScale().applyOptions({
+    volumeRef.current.priceScale().applyOptions({
       scaleMargins: { top: 0.85, bottom: 0 },
     });
 
-    candleSeries.priceScale().applyOptions({
+    candleRef.current.priceScale().applyOptions({
       scaleMargins: { top: 0.05, bottom: 0.2 },
     });
 
-    const resize = () => {
-  const chart = chartRef.current;
-  const container = containerRef.current;
+    const handleResize = () => {
+      if (!containerRef.current || !chartRef.current) return;
 
-  if (!chart || !container) return;
+      chartRef.current.applyOptions({
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+      });
+    };
 
-  try {
-    chart.applyOptions({
-      width: container.clientWidth,
-      height: container.clientHeight,
-    });
-
-    chart.timeScale().applyOptions({
-      barSpacing: BAR_SPACING,
-    });
-  } catch {
-    console.warn("Resize skipped: chart disposed");
-  }
-};
-
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', handleResize);
 
     return () => {
-  window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
 
-  chart.remove();
-
-  chartRef.current = null;
-  candleRef.current = null;
-  volumeRef.current = null;
-
-  };
+      chartRef.current = null;
+      candleRef.current = null;
+      volumeRef.current = null;
+    };
   }, []);
 
-  /* ---------------- FETCH DATA ---------------- */
+  const firstLoad = useRef(true);
+  /* ---------------- DATA FETCH ---------------- */
   useEffect(() => {
-  if (!symbol || !candleRef.current || !volumeRef.current) return;
+    if (!symbol) return;
 
-  let active = true;
+    let alive = true;
+    let interval: NodeJS.Timeout;
 
-  async function load() {
-    try {
-      const res = await fetch(
-  `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=100`
+    
+
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/market/snapshot?symbol=${symbol}`);
+const data = await res.json();
+
+
+const raw = data.candles?.[timeframe] || [];
+
+
+        if (!alive || !Array.isArray(raw)) return;
+
+        const candles: CandlestickData<UTCTimestamp>[] = raw.map((d: any) => ({
+          time: Math.floor(Number(d.time) / 1000) as UTCTimestamp,
+          open: Number(d.open),
+          high: Number(d.high),
+          low: Number(d.low),
+          close: Number(d.close),
+        }));
+
+        const volumes: HistogramData<UTCTimestamp>[] = raw.map((d: any) => ({
+         time: Math.floor(Number(d.time) / 1000) as UTCTimestamp,
+          value: Number(d.volume || 0),
+          color: d.close > d.open ? '#22c55e' : '#ef4444',
+        }));
+
+        candleRef.current?.setData(candles);
+        volumeRef.current?.setData(volumes);
+
+       
+
+        if (firstLoad.current) {
+          chartRef.current?.timeScale().fitContent();
+          firstLoad.current = false;
+        }
+      } catch (err) {
+        console.error('Chart load error:', err);
+      }
+    };
+
+    load();
+    interval = setInterval(load, 5000);
+
+    return () => {
+      alive = false;
+      clearInterval(interval);
+    };
+  }, [symbol, timeframe]);
+
+  const handleTimeframe = useCallback(
+    (tf: typeof TIMEFRAMES[number]) => {
+        setTimeframe(tf);
+    },
+    []
 );
 
-if (!res.ok) {
-  throw new Error(`Binance HTTP ${res.status}`);
-}
 
-      if (!active) return;
-
-      const raw = await res.json();
-
-      if (!Array.isArray(raw)) {
-  console.error("Binance response:", raw);
-  return;
-}
-
-      if (!Array.isArray(raw)) {
-  throw new Error("Invalid Binance response");
-}
-
-      if (!active) return;
-
-      const seen = new Set<number>();
-
-    const candles: ChartCandle[] = raw
-  .map((d: any[]) => ({
-    time: Math.floor(d[0] / 1000) as UTCTimestamp,
-    open: Number(d[1]),
-    high: Number(d[2]),
-    low: Number(d[3]),
-    close: Number(d[4]),
-    volume: Number(d[5]),
-  }))
-        .filter((c: ChartCandle) => {
-          if (seen.has(c.time)) return false;
-          seen.add(c.time);
-          return true;
-        })
-        .sort((a: ChartCandle, b: ChartCandle) => a.time - b.time);
-
-      const volumes = candles.map((d: ChartCandle) => ({
-  time: d.time,
-  value: d.volume,
-  color: d.close > d.open ? "#22c55e" : "#ef4444",
-}));
-
-      if (!active) return;
-
-      candleRef.current?.setData(candles);
-      volumeRef.current?.setData(volumes);
-
-     requestAnimationFrame(() => {
-  if (!active) return;
-
-  const chart = chartRef.current;
-
-  if (!chart) return;
-
-  try {
-    chart.timeScale().scrollToRealTime();
-
-    chart.timeScale().applyOptions({
-      barSpacing: BAR_SPACING,
-    });
-  } catch {
-    console.warn("Chart already disposed");
-  }
-});
-    } catch (err) {
-      console.error("Chart load error:", err);
-    }
-  }
-
-  load();
-
-   const intervalId = setInterval(load, 5000);
-
-  return () => {
-    active = false;
-    clearInterval(intervalId);
-  };
-}, [symbol, timeframe]);
-
+  /* ---------------- UI ---------------- */
   return (
-    <div className="w-full bg-[#0B1220] rounded-lg overflow-hidden border border-white/5">
+    <div className="flex flex-col h-full w-full bg-[#0B1220] rounded-lg overflow-hidden border border-white/5">
 
-      {/* TOP BAR */}
-     <div
-className="
-px-3 py-2
-border-b border-white/5
-flex flex-col lg:flex-row
-gap-2
-lg:items-center
-lg:justify-between
-text-xs
-"
->
+      {/* HEADER */}
+      <div className="px-3 py-2 border-b border-white/5 flex flex-col lg:flex-row gap-2 lg:items-center lg:justify-between text-xs">
         <div className="flex items-center gap-4">
           <span className="font-semibold text-white text-sm">
             {coinName || symbol}
           </span>
 
           <span className="text-lg font-semibold">
-            {price ? `$${price.toFixed(2)}` : '--'}
+            {price ? `$${price.toFixed(4)}` : '--'}
           </span>
 
-          <span className={change !== undefined && change >= 0 ? "text-green-400" : "text-red-400"}>
+          <span className={change && change >= 0 ? 'text-green-400' : 'text-red-400'}>
             {change?.toFixed(2)}%
           </span>
         </div>
 
         <div className="flex items-center gap-6 text-gray-400">
-          <div>24H High: <span className="text-white">{high?.toFixed(2) || '--'}</span></div>
-          <div>24H Low: <span className="text-white">{low?.toFixed(2) || '--'}</span></div>
-          <div>24H Vol: <span className="text-white">{volume?.toFixed(0) || '--'}</span></div>
+          <div>24H High: <span className="text-white">{high ?? '--'}</span></div>
+          <div>24H Low: <span className="text-white">{low ?? '--'}</span></div>
+          <div>24H Vol: <span className="text-white">{volume ?? '--'}</span></div>
         </div>
       </div>
 
-      {/* CONTROLS */}
-      <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
-        <div className="flex gap-2">
-          {TIMEFRAMES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setTimeframe(t.value)}
-              className={`text-xs px-2 py-1 rounded ${
-                timeframe === t.value
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:bg-white/5'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
+      {/* TIMEFRAMES */}
+      <div className="px-3 py-2 border-b border-white/5 flex gap-2">
+        {TIMEFRAMES.map((t) => (
+          <button
+            key={t}
+            onClick={() => handleTimeframe(t)}
+            className={`text-xs px-2 py-1 rounded ${
+              timeframe === t
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:bg-white/5'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {/* CHART */}
       <div
   ref={containerRef}
-  className="w-full h-[320px] sm:h-[420px] lg:h-[520px]"
+  className="flex-1 min-h-0 w-full"
 />
     </div>
   );
-}
+});
+export default CandlestickChart;

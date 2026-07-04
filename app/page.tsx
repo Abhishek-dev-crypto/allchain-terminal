@@ -11,10 +11,18 @@ import MiniPreview from "./components/MiniPreview";
 import { doc, setDoc } from "firebase/firestore";
 import MarketPagePreview from "./components/MarketPagePreview";
 import { trackEvent } from "../lib/analytics";
+import { useGenieRuntime } from "@/lib/hooks/useGenieRuntime";
 
+import TourOverlay from "./components/genie/TourOverlay";
+import { useGenie } from "./contexts/GenieRuntimeContext";
+import GenieTooltip from "./components/genie/GenieTooltip";
+
+import { useSectionTracking } from "@/app/hooks/useSectionTracking";
+import GenieSectionTracker from "./components/genie/GenieSectionTracker";
 
 
 export default function LandingPage() {
+  useSectionTracking();
   const [price, setPrice] = useState(60000);
   const [history, setHistory] = useState<number[]>([]);
   const [signal, setSignal] = useState<"BUY" | "SELL">("BUY");
@@ -35,7 +43,9 @@ export default function LandingPage() {
   entry: number;
   size: number;
 }>(null);
-  
+
+  const [genieStep, setGenieStep] = useState<"idle" | "mini" | "market">("idle");
+
   const [coins, setCoins] = useState([
   { symbol: "BTC", price: 60000, prev: 60000 },
   { symbol: "ETH", price: 3200, prev: 3200 },
@@ -57,9 +67,21 @@ const [aiPhase, setAiPhase] = useState<
   "idle" | "analyzing" | "suggestion" | "trade"
 >("idle");
 
-
 const activeCoin =
   coins.find((c) => c.symbol === selectedCoin) || coins[0]
+  
+  const { startTour } = useGenie();
+  const { state } = useGenie();
+
+  useEffect(() => {
+  const sequence = async () => {
+    setTimeout(() => setGenieStep("mini"), 1500);
+    setTimeout(() => setGenieStep("market"), 4000);
+    setTimeout(() => setGenieStep("idle"), 7000);
+  };
+
+  sequence();
+}, []);
 
 useEffect(() => {
   if (paused) return;
@@ -419,7 +441,7 @@ useEffect(() => {
     appearance: "none",
   }}
 >
-      Start Trading
+      Start Demo Trading
     </button>
 
 
@@ -433,18 +455,36 @@ useEffect(() => {
   
 </header>
 
-
+<button
+  onClick={() => startTour("landing")}
+>
+  Start Genie Test
+</button>
 
 {/* HERO FIRST */}
     {/* ✅ MAIN CONTENT */}
-   <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-10 pt-32 sm:pt-36 md:pt-40">
-
-    
-
+  <div
+  className={`
+    relative
+    max-w-7xl
+    mx-auto
+    px-4
+    sm:px-6
+    md:px-10
+    pt-32
+    sm:pt-36
+    md:pt-40
+    origin-top
+    transition-all
+    duration-500
+    ease-out
+    ${state.tourActive ? "scale-[0.98]" : "scale-100"}
+  `}
+>
          {/* HERO */}
+          
  <section
-  id="hero-section"
- className="relative pt-2 md:pt-6 pb-12 md:pb-16 overflow-visible"
+  className="relative pt-2 md:pt-6 pb-12 md:pb-16 overflow-visible"
 >
 
    {/* SMALL BADGE (ATTENTION TRIGGER) */}
@@ -462,12 +502,17 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 
 
   {/* GLOW */}
+    
   <div className="hidden md:block absolute right-[-150px] top-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/20 blur-[180px] rounded-full pointer-events-none" />
 
   <div className="grid md:grid-cols-2 lg:grid-cols-[0.9fr_1.5fr] gap-8 lg:gap-10 items-center">
 
-    {/* LEFT */}
-    <div id="hero-headline" className="max-w-lg">
+    {/* LEFT */} 
+                                       
+    <div
+  data-genie="hero-section"
+  className="max-w-lg"
+>
       <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.1] tracking-tight">
         <span className="text-white">
           Practice trading with AI guidance
@@ -482,8 +527,9 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
         Trade real markets with AI guidance, live signals, and ₹10,00,000 in simulated capital.
       </p>
 
-      <button
-  id="start-trading-btn"
+    
+      <button 
+
   onClick={() => {
   trackEvent("hero_cta_click");
   login();
@@ -552,34 +598,26 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 </div>
 
     {/* RIGHT */}
-    <div className="relative w-full">
+<div className="relative w-full">
 
       <motion.div
-        animate={{ y: [0, -12, 0] }}
-        transition={{ duration: 5, repeat: Infinity }}
-        className="relative w-full"
-      >
+  transition={{ duration: 5, repeat: Infinity }}
+  className="relative w-full"
+>
         {/* glow */}
         <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-3xl" />
 
         {/* preview */}
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="w-full max-w-none scale-100 md:scale-[1.03] lg:scale-[1.1]"
-        >
-          <div id="preview-card">
-
-         {activeCoin?.price ? (
+>
+<div data-genie="ai-preview">
   <MiniPreview
     price={activeCoin.price}
     signal={displaySignal}
     confidence={displayConfidence}
     selectedCoin={selectedCoin}
   />
-) : (
-  <div className="h-[200px] bg-white/5 rounded-xl animate-pulse" />
-)}
-          </div>
+</div>
         </motion.div>
 
       </motion.div>
@@ -604,7 +642,7 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 
 </div>
 {/* ================= WHY ALLCHAIN ================= */}
-<motion.section
+<motion.section data-genie="why-traders-fail"
   initial={{ opacity: 0, y: 40 }}
   whileInView={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.6 }}
@@ -612,6 +650,7 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 >
 
   {/* TOP FEATURES */}
+  
   <div className="grid md:grid-cols-3 gap-3">
 
     {[
@@ -658,6 +697,8 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
   </div>
 
   {/* COMPACT COMPARISON */}
+  
+<div >
   <div className="mt-5 grid md:grid-cols-2 gap-4">
 
     {/* PROBLEM */}
@@ -729,8 +770,10 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
     </div>
 
   </div>
+  </div>
 
 </motion.section>
+
 
 {/* PREMIUM DIVIDER */}
 <div className="relative flex items-center justify-center my-14">
@@ -752,11 +795,9 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 
       {/* LEFT */}
       <div>
-        <div>
+        <div data-genie="market-block">
           <MarketPagePreview/>
         </div>
-         
-         
       </div>
 
    {/* PREMIUM DIVIDER */}
@@ -776,7 +817,6 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
   
 {/* ================= HOW IT WORKS ================= */}
 <motion.section
-  id="how-it-works"
   initial={{ opacity: 0, y: 40 }}
   whileInView={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.6 }}
@@ -874,7 +914,8 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
 </div>
 
 {/* ================= COMPACT POSITIONING + CTA ================= */}
-<motion.section
+<motion.section 
+  data-genie="final-cta"
   initial={{ opacity: 0, y: 40 }}
   whileInView={{ opacity: 1, y: 0 }}
   transition={{ duration: 0.6 }}
@@ -914,15 +955,25 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
         {/* CTA */}
         <div className="flex flex-col items-start lg:items-end gap-3">
 
-          <button
-            onClick={() => {
-  trackEvent("bottom_cta_click");
-  login();
-}}
-            className="px-8 py-4 rounded-2xl bg-white text-black font-semibold hover:scale-[1.03] transition"
-          >
-            Start Risk-Free →
-          </button>
+         <button
+  onClick={() => {
+    trackEvent("bottom_cta_click");
+    login();
+  }}
+  className={`px-8 py-4 rounded-2xl bg-white text-black font-semibold hover:scale-[1.03] transition ${
+  state.activeTarget === "final-cta"
+    ? `
+      animate-pulse
+      ring-4
+      ring-cyan-400/60
+      shadow-[0_0_40px_rgba(34,211,238,0.8)]
+      scale-110
+    `
+    : ""
+}`}
+>
+  Start Risk-Free →
+</button>
 
           <div className="text-xs text-gray-500">
             No capital required
@@ -970,11 +1021,12 @@ bg-white/5 border border-white/10 text-xs text-gray-300 backdrop-blur w-fit self
   </div>
 </motion.section>
 
-
       </div>
       <Footer />
+
+<TourOverlay />
+<GenieSectionTracker />
+
     </div>
   );
 }
-
-

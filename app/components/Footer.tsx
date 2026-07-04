@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { Linkedin } from "lucide-react";
 
 const Footer = () => {
   const [visible, setVisible] = useState(false);
@@ -83,6 +84,8 @@ const Footer = () => {
       
 
       {/* 📊 STATS */}
+
+      <div className="relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 md:px-12 py-6">
 
       {[
@@ -189,10 +192,54 @@ const Footer = () => {
 </div>
 </div>
 
+{/* SOCIAL */}
+<div className="border-t border-white/10 py-4">
+
+  <div className="flex items-center justify-center gap-4">
+
+    <span className="text-xs text-gray-500 uppercase tracking-wider">
+      Follow
+    </span>
+
+    {/* LinkedIn */}
+    <a
+      href="https://www.linkedin.com/company/allchain-labs/?viewAsMember=true"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="LinkedIn"
+      className="text-gray-400 hover:text-blue-400 transition"
+    >
+      <Linkedin size={18} />
+    </a>
+
+    {/* X */}
+    <a
+      href="https://x.com/allchainlabs"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="X"
+      className="text-gray-400 hover:text-white transition"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1200 1227"
+        className="h-[16px] w-[16px] fill-current"
+      >
+        <path d="M714.163 519.284L1160.89 0H1055.17L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.728L515.193 750.218L842.672 1226.37H1200L714.163 519.284ZM568.782 688.638L521.369 620.785L144.011 80.694H306.615L611.14 516.593L658.553 584.446L1055.22 1151.72H892.615L568.782 688.638Z" />
+      </svg>
+    </a>
+
+  </div>
+
+</div>
+
+
       {/* BOTTOM */}
       <div className="border-t border-white/10 py-6 text-center text-xs text-gray-500">
         © 2026 AllChain. Built for risk-free trading.
       </div>
+
+</div>
 
       {/* ✨ ANIMATIONS */}
       <style jsx>{`

@@ -1,55 +1,78 @@
 import { NextResponse } from "next/server";
 
+import { cachedFetch } from "@/lib/cache/cachedFetch";
+import { cacheTTL } from "@/lib/cache/cacheTTL";
+
+const REQUEST_TIMEOUT = 8000;
+
 export async function GET() {
   try {
-    // =========================
-    // COINTELEGRAPH RSS
-    // =========================
-    const rssRes = await fetch(
-      "https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss",
-      {
-        next: { revalidate: 300 },
-      }
-    );
+    const news = await cachedFetch({
+      key: "market:news",
+      ttl: cacheTTL.news,
 
-    const rssData = await rssRes.json();
+      fetcher: async () => {
+        const controller = new AbortController();
 
-    const rssItems = (rssData.items || []).map((item: any) => ({
-      title: item.title,
-      url: item.link,
-      source: "CoinTelegraph",
-    }));
+        const timeout = setTimeout(() => {
+          controller.abort();
+        }, REQUEST_TIMEOUT);
 
-    // =========================
-    // COINDESK RSS
-    // =========================
-    const cdRes = await fetch(
-      "https://api.rss2json.com/v1/api.json?rss_url=https://www.coindesk.com/arc/outboundfeeds/rss/",
-      {
-        next: { revalidate: 300 },
-      }
-    );
+        try {
+          const [rssRes, cdRes] = await Promise.all([
+            fetch(
+              "https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss",
+              {
+                signal: controller.signal,
+              }
+            ),
+            fetch(
+              "https://api.rss2json.com/v1/api.json?rss_url=https://www.coindesk.com/arc/outboundfeeds/rss/",
+              {
+                signal: controller.signal,
+              }
+            ),
+          ]);
 
-    const cdData = await cdRes.json();
+          if (!rssRes.ok || !cdRes.ok) {
+            throw new Error("News provider fetch failed");
+          }
 
-    const cdItems = (cdData.items || []).map((item: any) => ({
-      title: item.title,
-      url: item.link,
-      source: "CoinDesk",
-    }));
+          const [rssData, cdData] = await Promise.all([
+            rssRes.json(),
+            cdRes.json(),
+          ]);
 
-    // =========================
-    // MERGE
-    // =========================
-    const merged = [...rssItems, ...cdItems];
+          const rssItems = (rssData.items || []).map((item: any) => ({
+            title: item.title,
+            url: item.link,
+            source: "CoinTelegraph",
+          }));
 
-    return NextResponse.json(merged);
+          const cdItems = (cdData.items || []).map((item: any) => ({
+            title: item.title,
+            url: item.link,
+            source: "CoinDesk",
+          }));
+
+          return [...rssItems, ...cdItems];
+        } finally {
+          clearTimeout(timeout);
+        }
+      },
+    });
+
+    return NextResponse.json(news);
   } catch (err) {
-    console.error(err);
+    console.error("News API Error:", err);
 
     return NextResponse.json(
-      { error: "Failed to fetch news" },
-      { status: 500 }
+      {
+        error: "Failed to fetch news",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { getExchangeUniverse } from '@/lib/binance/exchangeUniverse';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
 
 interface Coin {
   symbol: string;
@@ -37,6 +37,15 @@ export default function CoinList({ selectedCoin, onSelectCoin }: Props) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [sort, setSort] = useState<'all' | 'gainers' | 'losers'>('all');
   const [prevPrices, setPrevPrices] = useState<Record<string, number>>({});
+  const previousPricesRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+  console.log("COINLIST MOUNT");
+
+  return () => {
+    console.log("COINLIST UNMOUNT");
+  };
+}, []);
 
   /* ---------------- LOAD FAVORITES ---------------- */
   useEffect(() => {
@@ -57,40 +66,65 @@ export default function CoinList({ selectedCoin, onSelectCoin }: Props) {
   };
 
   /* ---------------- FETCH BINANCE DATA ---------------- */
- useEffect(() => {
+useEffect(() => {
+  let interval: NodeJS.Timeout;
+
   const fetchData = async () => {
     try {
-      const universe = await getExchangeUniverse();
+      const res = await fetch("/api/market/tickers");
 
-      const res = await fetch("https://api.binance.com/api/v3/ticker/24hr"
-);
+      if (!res.ok) {
+        console.error("Tickers API failed:", res.status);
+        return;
+      }
 
       const data = await res.json();
 
+      console.log("TICKERS RAW:", data);
+
+      if (!Array.isArray(data)) {
+        console.error("Invalid tickers format:", data);
+        return;
+      }
+
       const formatted: Coin[] = data
-        .filter((d: any) => universe.has(d.symbol)) // 🔥 KEY FIX
+        .filter((d: any) => d && typeof d.symbol === "string")
         .map((d: any) => {
-          const base = d.symbol.replace('USDT', '');
+          const base = d.symbol.replace("USDT", "");
+
+          const price = Number(d.lastPrice);
+          const change = Number(d.priceChangePercent);
 
           return {
             symbol: d.symbol,
             base,
             name: COIN_META[base]?.name || base,
-            price: parseFloat(d.lastPrice),
-            change: parseFloat(d.priceChangePercent),
+
+            price: Number.isFinite(price) ? price : 0,
+            change: Number.isFinite(change) ? change : 0,
           };
         });
 
+      const previous = { ...previousPricesRef.current };
+
+      formatted.forEach((coin) => {
+      previousPricesRef.current[coin.symbol] = coin.price;
+      });
+
+      setPrevPrices(previous);
       setCoins(formatted);
     } catch (err) {
-      console.error(err);
+      console.error("CoinList fetch error:", err);
+      setCoins([]);
     }
   };
 
   fetchData();
-  const interval = setInterval(fetchData, 10000);
+  interval = setInterval(fetchData, 10000);
 
-  return () => clearInterval(interval);
+  return () => {
+    if (interval) clearInterval(interval);
+  };
 }, []);
 
   /* ---------------- FILTER + SORT ---------------- */
@@ -228,7 +262,7 @@ export default function CoinList({ selectedCoin, onSelectCoin }: Props) {
                   </div>
 
                   <div className="text-[11px] text-gray-400">
-                    ${coin.price.toFixed(2)}
+                    {Number.isFinite(coin.price) ? coin.price.toFixed(2) : "--"}
                   </div>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import { NARRATIVES } from "./narrativeConfig";
+import type { Coin } from "@/lib/types/coin";
 
 type SourceItem = {
   title: string;
@@ -97,13 +98,6 @@ export function buildNarratives(data: SourceItem[]): Narrative[] {
 
 // buildNarratives() function
 
-type Coin = {
-  id: string;
-  symbol: string;
-  change24h: number;
-  marketCap: number;
-  volume?: number;
-};
 
 type MarketStructure = {
   marketMood: string;
@@ -131,20 +125,16 @@ const INFRA = [
 
 const MEME = ["dogecoin"];
 
-function getSector(id: string) {
+function getSector(id?: string) {
+  if (!id) return "OTHER";
+
   if (L1.includes(id)) return "L1";
 
-  if (DEFI.includes(id)) {
-    return "DEFI";
-  }
+  if (DEFI.includes(id)) return "DEFI";
 
-  if (INFRA.includes(id)) {
-    return "INFRA";
-  }
+  if (INFRA.includes(id)) return "INFRA";
 
-  if (MEME.includes(id)) {
-    return "MEME";
-  }
+  if (MEME.includes(id)) return "MEME";
 
   return "OTHER";
 }

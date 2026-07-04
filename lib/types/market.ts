@@ -8,6 +8,7 @@ import type { buildMarketIntelligence } from "@/lib/intel/buildMarketIntelligenc
 
 import type { buildFreeNarrativeEngine } from "@/lib/intel/freeNarrativeEngine";
 
+
 export type MarketRegime =
   | "RISK_ON"
   | "RISK_OFF"
@@ -42,4 +43,21 @@ regimeHistory: {
   timestamp: number;
 }[];
 
+};
+
+export type GlobalData = {
+  data: {
+    total_market_cap: {
+      usd: number;
+    };
+    total_volume: {
+      usd: number;
+    };
+    market_cap_change_percentage_24h_usd?: number;
+    market_cap_percentage: {
+      btc: number;
+    };
+    active_cryptocurrencies: number;
+    markets: number;
+  };
 };

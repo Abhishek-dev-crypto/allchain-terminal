@@ -1,33 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
 import { useMarket } from "@/lib/providers/MarketProvider";
 import type { FreeNarrative } from "@/lib/intel/freeNarrativeEngine";
 
-type Mood = "RISK_ON" | "RISK_OFF" | "BALANCED";
 
 export default function AINarrativeEngine() {
-  const { snapshot, narratives } = useMarket();
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || !snapshot) return null;
-
-  const { marketState, breadth, momentum, volatility, flow } = snapshot;
+ const {
+    narratives,
+    engine,
+} = useMarket();
 
   // =========================
   // SAFE UI HELPERS
   // =========================
-
-  const mood: Mood = marketState?.mood ?? "BALANCED";
-
-  
 
   const getStateColor = (state: FreeNarrative["state"]) => {
     switch (state) {
@@ -53,10 +40,10 @@ export default function AINarrativeEngine() {
   };
 
   const getVolatilityColor = () => {
-    if (volatility.level === "HIGH") return "text-red-300";
-    if (volatility.level === "MEDIUM") return "text-yellow-300";
-    return "text-emerald-300";
-  };
+  if (engine.volatility > 2.5) return "text-red-300";
+  if (engine.volatility > 1.2) return "text-yellow-300";
+  return "text-emerald-300";
+};
 
   // =========================
   // RENDER
@@ -79,58 +66,72 @@ export default function AINarrativeEngine() {
     AI Narrative Engine
   </h2>
 
-  <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-xs text-white/60">
-    <span className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">
-      {marketState?.mood?.replace("_", " ")}
-    </span>
-
-    <span className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">
-      {flow.state}
-    </span>
-
-    <span className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">
-      {momentum.direction}
-    </span>
-
-    <span className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">
-      {volatility.level} VOL
-    </span>
+ {/* MARKET SIGNAL LAYER */}
+<div className="mt-4">
+  <div className="mb-3 text-[10px] uppercase tracking-widest text-white/40">
+    Market Signal Layer
   </div>
 
+  <div className="flex flex-wrap gap-3">
 
-        {/* STRIP */}
-        <div className="mt-5 flex flex-wrap gap-2">
-          <div className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">
-            <div className="text-[10px] text-xs text-white/40 uppercase">Breadth</div>
-                <div className="text-xs text-white font-medium">
-                    {breadth.greenPercent}%
-                </div>
-            </div>
-
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-            <div className="text-[10px] uppercase text-xs text-white/40">
-              Volatility
-            </div>
-            <div className={`mt-1 text-sm font-semibold ${getVolatilityColor()}`}>
-              {volatility.level}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-            <div className="text-[10px] uppercase text-xs text-white/40">Flow</div>
-            <div className="mt-1 text-sm font-semibold text-xs text-white">
-              {flow.state}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-            <div className="text-[10px] uppercase text-xs text-white/40">Momentum</div>
-            <div className="mt-1 text-sm font-semibold text-cyan-300">
-              {momentum.direction}
-            </div>
-          </div>
-        </div>
+    {/* Mood */}
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 min-w-[120px]">
+      <div className="text-[10px] uppercase text-white/40">
+        Market Mood
       </div>
+
+      <div className="mt-1 text-sm font-semibold text-white">
+        {engine.regime.replace("_", " ")}
+      </div>
+    </div>
+
+    {/* Breadth */}
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 min-w-[90px]">
+      <div className="text-[10px] uppercase text-white/40">
+        Breadth
+      </div>
+
+      <div className="mt-1 text-sm font-semibold text-white">
+        {engine.positiveBreadth}%
+      </div>
+    </div>
+
+    {/* Flow */}
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 min-w-[130px]">
+      <div className="text-[10px] uppercase text-white/40">
+        Capital Flow
+      </div>
+
+      <div className="mt-1 text-sm font-semibold text-white">
+        {engine.signals.flow.state}
+      </div>
+    </div>
+
+    {/* Momentum */}
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 min-w-[130px]">
+      <div className="text-[10px] uppercase text-white/40">
+        Momentum
+      </div>
+
+      <div className="mt-1 text-sm font-semibold text-cyan-300">
+        {engine.signals.momentum.direction}
+      </div>
+    </div>
+
+    {/* Volatility */}
+    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 min-w-[110px]">
+      <div className="text-[10px] uppercase text-white/40">
+        Volatility
+      </div>
+
+      <div className={`mt-1 text-sm font-semibold ${getVolatilityColor()}`}>
+        {engine.volatilityState}
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
 
       {/* NARRATIVES */}
       <div className="mt-6">
@@ -147,7 +148,7 @@ export default function AINarrativeEngine() {
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           {narratives.map((item: FreeNarrative, i: number) => (
             <motion.div
-              key={i}
+             key={item.title}
               whileHover={{ scale: 1.01 }}
               className="rounded-lg border border-white/10 bg-white/[0.03] p-3 space-y-2"
             >
@@ -217,7 +218,7 @@ export default function AINarrativeEngine() {
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {momentum.leaders.map((coin) => (
+          {(engine.leaders ?? []).map((coin) => (
             <div
               key={coin.id}
               className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2"

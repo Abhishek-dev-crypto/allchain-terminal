@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo, useEffect, useRef } from "react";
+
+import { useMemo, useEffect, useRef, useState } from "react";
 
 import {
   useMarketSnapshot,
@@ -39,19 +40,37 @@ export default function MomentumAnalysis() {
   /**
    * 📊 Snapshot Layer
    */
-  const snapshot: MarketSnapshot =
-    useMarketSnapshot(coins);
+  const snapshot = useMarketSnapshot(coins);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+  if (isFullscreen) {
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+  }
+
+  return () => {
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+  };
+}, [isFullscreen]);
 
     /**
  * 🧠 Previous Snapshot Memory
  */
-const previousSnapshot =
-  useRef<MarketSnapshot | null>(null);
+const previousSnapshot = useRef<MarketSnapshot | null>(null);
 
 const previous =
   previousSnapshot.current;
 
-  const tradeSignals = buildTradeSignals(snapshot);
+  const tradeSignals = useMemo(
+  () => buildTradeSignals(snapshot),
+  [snapshot]
+);
 
   const getSignalColor = (
   type: "BULLISH" | "BEARISH" | "NEUTRAL"
@@ -132,7 +151,7 @@ const acceleratingAssets = useMemo(() => {
       ...coin,
       score:
         coin.change24h * 1.2 +
-        (coin.volume || 0) * 0.000001,
+        (coin.volume24h || 0) * 0.000001,
     }))
     .sort((a, b) => b.score - a.score)
     .filter((c) => c.change24h > 0)
@@ -149,7 +168,10 @@ const coolingAssets = useMemo(() => {
     .slice(0, 4);
 }, [snapshot.coins]);
 
-    const timeline = buildMomentumTimeline(snapshot);
+    const timeline = useMemo(
+  () => buildMomentumTimeline(snapshot),
+  [snapshot]
+);
 
     /**
  * 🚀 Sector Rotation Engine
@@ -322,67 +344,89 @@ useEffect(() => {
  
  
 
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="
-        overflow-hidden
-        rounded-xl
-        border border-white/10
-        bg-gradient-to-br from-white/[0.04] to-white/[0.02]
-        p-2.5
-        backdrop-blur-2xl
-      "
+ return (
+  <>
+    {/* BACKDROP (only in fullscreen) */}
+    {isFullscreen && (
+      <div
+        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md"
+        onClick={() => setIsFullscreen(false)}
+      />
+    )}
+
+    {/* OUTER LAYOUT CONTROLLER */}
+    <div
+      className={isFullscreen
+        ? "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-6"
+        : ""
+      }
     >
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={`
+          w-full
+          ${isFullscreen
+            ? "max-w-6xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.02] p-4"
+            : "rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.02] p-2.5"
+          }
+          backdrop-blur-2xl
+          overflow-hidden
+        `}
+      >
 
-      {/* ====================================================== */}
-      {/* HEADER */}
-      {/* ====================================================== */}
+     {/* ====================================================== */}
+{/* HEADER */}
+{/* ====================================================== */}
 
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+<div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
 
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.35em] text-cyan-300/90">
-              MOMENTUM INTELLIGENCE
-          </div>
+ 
 
-          <h2 className="mt-1 text-xs font-semibold text-white">
-              Momentum Analysis
-          </h2>
+  {/* CENTER */}
+  <div>
 
-          <p className="mt-1 text-xs text-white/50">
-              Trend acceleration and participation tracking
-          </p>
-        </div>
+    <div className="text-[10px] uppercase tracking-[0.35em] text-cyan-300/90">
+      MOMENTUM INTELLIGENCE
+    </div>
 
-        {/* REGIME */}
-        <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+    <h2 className="mt-1 text-xs font-semibold text-white">
+      Momentum Analysis
+    </h2>
 
-          <div className="text-[10px] uppercase tracking-widest text-white/40">
-            Momentum Regime
-          </div>
+    <p className="mt-1 text-xs text-white/50">
+      Trend acceleration and participation tracking
+    </p>
 
-          <div
-            className={`mt-2 text-xs font-semibold ${regime.color}`}
-          >
-            {regime.label}
-          </div>
+  </div>
 
-          <div className="mt-1 text-[10px] text-white/40">
-            {momentum.direction}
-          </div>
+  {/* RIGHT */}
+  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
 
-        </div>
+    <div className="text-[10px] uppercase tracking-widest text-white/40">
+      Momentum Regime
+    </div>
 
-      </div>
+    <div
+      className={`mt-2 text-xs font-semibold ${regime.color}`}
+    >
+      {regime.label}
+    </div>
+
+    <div className="mt-1 text-[10px] text-white/40">
+      {momentum?.direction ?? "—"}
+    </div>
+
+  </div>
+
+</div>
 
       {/* ====================================================== */}
       {/* TOP STRIP */}
       {/* ====================================================== */}
 
-      <div className="4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
 
         {/* MOMENTUM */}
         <div className="rounded-2xl border border-white/10 bg-black/20 p-2.5">
@@ -396,7 +440,7 @@ useEffect(() => {
           </div>
 
           <div className="text-[10px] text-cyan-300">
-              {momentum.direction}
+              {momentum?.direction ?? "—"}
             </div>
 
         </div>
@@ -430,7 +474,7 @@ useEffect(() => {
           </div>
 
           <div className="mt-1 text-[10px] text-cyan-300">
-            {flow.state}
+            {flow?.state ?? "—"}
           </div>
 
         </div>
@@ -485,7 +529,7 @@ useEffect(() => {
       <div className="space-y-2">
         {acceleratingAssets.slice(0,3).map((coin) => (
           <div
-            key={coin.id}
+            key={coin.symbol}
             className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
           >
             <span className="text-[10px] text-white">
@@ -511,7 +555,7 @@ useEffect(() => {
       <div className="space-y-2">
         {coolingAssets.slice(0,3).map((coin) => (
           <div
-            key={coin.id}
+            key={coin.symbol}
             className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
           >
             <span className="text-[10px] text-white">
@@ -530,7 +574,103 @@ useEffect(() => {
 
 </div>
 
-    {/* ========================================================= */}
+
+ {/* ========================================================= */}
+{/* MOMENTUM TIMELINE */}
+{/* ========================================================= */}
+
+<div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-2.5">
+
+  <div className="flex items-center justify-between">
+
+    <div>
+      <div className="text-[10px] uppercase tracking-widest text-white/40">
+        Momentum Timeline
+      </div>
+
+      <div className="mt-1 text-[10px] text-white/50">
+        Multi-timeframe trend structure
+      </div>
+    </div>
+
+    <div className="text-xs text-white/40">
+      AI Trend Model
+    </div>
+
+  </div>
+
+  <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-2.5">
+
+
+  <div className="mt-3 space-y-2">
+
+    {timeline.map((item) => (
+
+      <div
+        key={item.timeframe}
+        className="flex items-center justify-between"
+      >
+        
+
+  <div className="text-xs text-white">
+    {item.timeframe}
+  </div>
+
+  <div className="text-[11px] text-white/50">
+    {item.state}
+  </div>
+
+  <div className="text-[11px] text-cyan-300">
+    {item.confidence}%
+  </div>
+
+
+
+      </div>
+
+    ))}
+
+  </div>
+
+</div>
+
+</div>
+
+ 
+
+      {/* ====================================================== */}
+      {/* MARKET TRANSITIONS */}
+      {/* ====================================================== */}
+
+<div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-2.5">
+
+  <div className="flex items-center justify-between">
+
+    <div>
+      <div className="text-[10px] uppercase tracking-widest text-white/40">
+        Market Transition State
+      </div>
+
+      <div className="mt-1 text-[10px] text-white/50">
+        Detecting structural momentum shifts
+      </div>
+    </div>
+
+    <div
+      className={`text-xs font-medium ${transitionState.color}`}
+    >
+      {transitionState.label}
+    </div>
+
+  </div>
+
+  <p className="mt-4 text-[10px] leading-relaxed text-white/70">
+    {transitionState.insight}
+  </p>
+
+</div>
+
+   {/* ========================================================= */}
 {/* SECTOR ROTATION INTELLIGENCE */}
 {/* ========================================================= */}
 
@@ -578,102 +718,7 @@ useEffect(() => {
 
 </div>
 
-      {/* ====================================================== */}
-      {/* MARKET TRANSITIONS */}
-      {/* ====================================================== */}
-
-<div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-2.5">
-
-  <div className="flex items-center justify-between">
-
-    <div>
-      <div className="text-[10px] uppercase tracking-widest text-white/40">
-        Market Transition State
-      </div>
-
-      <div className="mt-1 text-[10px] text-white/50">
-        Detecting structural momentum shifts
-      </div>
-    </div>
-
-    <div
-      className={`text-xs font-medium ${transitionState.color}`}
-    >
-      {transitionState.label}
-    </div>
-
-  </div>
-
-  <p className="mt-4 text-[10px] leading-relaxed text-white/70">
-    {transitionState.insight}
-  </p>
-
-</div>
-
-     {/* ========================================================= */}
-{/* MOMENTUM TIMELINE */}
-{/* ========================================================= */}
-
-<div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-2.5">
-
-  <div className="flex items-center justify-between">
-
-    <div>
-      <div className="text-[10px] uppercase tracking-widest text-white/40">
-        Momentum Timeline
-      </div>
-
-      <div className="mt-1 text-[10px] text-white/50">
-        Multi-timeframe trend structure
-      </div>
-    </div>
-
-    <div className="text-xs text-white/40">
-      AI Trend Model
-    </div>
-
-  </div>
-
-  <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-2.5">
-
-  <div className="text-[10px] uppercase tracking-widest text-white/40">
-    Momentum Timeline
-  </div>
-
-  <div className="mt-3 space-y-2">
-
-    {timeline.map((item) => (
-
-      <div
-        key={item.timeframe}
-        className="flex items-center justify-between"
-      >
-        
-
-  <div className="text-xs text-white">
-    {item.timeframe}
-  </div>
-
-  <div className="text-[11px] text-white/50">
-    {item.state}
-  </div>
-
-  <div className="text-[11px] text-cyan-300">
-    {item.confidence}%
-  </div>
-
-
-
-      </div>
-
-    ))}
-
-  </div>
-
-</div>
-
-</div>
-
+    
    {/* ========================================================= */}
 {/* AI SIGNAL ENGINE */}
 {/* ========================================================= */}
@@ -700,9 +745,9 @@ useEffect(() => {
 
   <div className="mt-4 space-y-3">
 
-    {tradeSignals.map((signal, index) => (
+    {tradeSignals.map((signal) => (
       <div
-        key={index}
+        key={signal.title}
         className="
           rounded-2xl
           border border-white/10
@@ -815,6 +860,45 @@ useEffect(() => {
 
 </div>
 
-    </motion.section>
+<div className="flex items-center justify-center mt-4 mb-3">
+
+  <button
+    onClick={() => setIsFullscreen(!isFullscreen)}
+    className="
+      flex items-center gap-2
+      rounded-xl
+      border border-white/10
+      bg-white/[0.03]
+      px-4 py-2
+      text-xs
+      font-medium
+      tracking-wide
+      text-white/80
+      hover:text-white
+      hover:border-cyan-400/30
+      hover:bg-white/[0.06]
+      transition-all
+      shadow-sm shadow-black/20
+    "
+  >
+    <span className="h-1.5 w-1.5 rounded-full bg-cyan-400/80" />
+
+    <span className="uppercase">
+      {isFullscreen ? "✕ Close" : "View Full Momentum Intelligence"}
+    </span>
+
+    <span className="text-cyan-300/60">
+      →
+    </span>
+
+  </button>
+
+</div>
+
+
+</motion.section>
+</div>
+
+</>
   );
 }

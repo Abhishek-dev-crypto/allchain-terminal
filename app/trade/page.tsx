@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import toast from 'react-hot-toast';
 import { onSnapshot, doc, setDoc, addDoc, collection } from 'firebase/firestore';
-import AIInsightsPanel from '../components/AIInsightsPanel';
 import PositionsPanel from '../components/PositionsPanel';
 
 import CoinList from '../components/CoinList';
 import CandlestickChart from '../components/CandlestickChart';
 import TradePanel from '../components/TradePanel';
 import AIEngine from '../components/AIEngine';
-import OrderPanel from '../components/OrderPanel';
+
 import OrderBook from '../components/OrderBook';
 import AIChatWidget from '../components/AIChatWidget';
 
@@ -21,6 +20,8 @@ import { executeTrade, derivePortfolio } from '@/lib/exchangeEngine';
 import { auth } from '@/lib/firebaseConfig';
 import { db } from '../../lib/firebaseConfig';
 import TradeSuccessModal from '../components/TradeSuccessModal';
+
+import TradeInsightPanel from '../components/TradeInsightPanel';
 
 type Coin = {
   symbol: string;
@@ -37,7 +38,7 @@ export default function TradePage() {
 
   const [tradeModal, setTradeModal] = useState<any>(null);
   const [aiData, setAiData] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
+
   const [userId, setUserId] = useState<string | null>(null);
 
   const [selectedCoin, setSelectedCoin] = useState<Coin>({
@@ -69,73 +70,90 @@ export default function TradePage() {
   }
 }, []);
 
-  useEffect(() => setMounted(true), []);
 
   /* ---------------- AUTH ---------------- */
   useEffect(() => {
-    let unsub: any;
+  let unsub: (() => void) | undefined;
 
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
-      if (!user) return router.replace('/');
+  const unsubAuth = onAuthStateChanged(auth, (user) => {
 
-      setUserId(user.uid);
+    // Stop previous Firestore listener immediately
+    if (unsub) {
+      unsub();
+      unsub = undefined;
+    }
 
-      const ref = doc(db, 'portfolios', user.uid);
+    if (!user) {
+      setUserId(null);
+      router.replace('/');
+      return;
+    }
 
-      unsub = onSnapshot(ref, (snap) => {
-        if (!snap.exists()) {
-          setEngineState({
+    setUserId(user.uid);
+
+    const ref = doc(db, 'portfolios', user.uid);
+
+    unsub = onSnapshot(ref, (snap) => {
+      if (!snap.exists()) {
+        setEngineState({
           balance: 1000000,
           portfolio: {},
           trades: [],
           activeOrders: [],
         });
-          setDoc(ref, { trades: [] });
-          return;
-        }
 
-        const trades = snap.data()?.trades || [];
-        const state = derivePortfolio(trades);
+        setDoc(ref, { trades: [] });
+        return;
+      }
 
-        setEngineState(state);
-      });
+      const trades = snap.data()?.trades || [];
+      setEngineState(derivePortfolio(trades));
     });
+  });
 
-    return () => {
-      unsubAuth();
-      if (unsub) unsub();
-    };
-  }, [router]);
+  return () => {
+    if (unsub) unsub();
+    unsubAuth();
+  };
+}, [router]);
 
   /* ---------------- PRICE ---------------- */
-  const { data } = useSWR(
-  selectedCoin.symbol,
-  async (symbol) => {
-    const res = await fetch(
-  `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`
-    );
+ const fetcher = useCallback(async (url: string) => {
+  const res = await fetch(url);
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch ticker");
-    }
+  if (!res.ok) {
+    throw new Error("Failed to fetch ticker");
+  }
 
-    return res.json();
+  return res.json();
+}, []);
+
+const { data } = useSWR(
+  `/api/market/ticker?symbol=${selectedCoin.symbol}`,
+  fetcher,
+  {
+    refreshInterval: 10000,
   }
 );
 
-  const price = parseFloat(data?.lastPrice || 0);
-  const change = parseFloat(data?.priceChangePercent || 0);
+  const price = Number(data?.price || 0);
+const change = Number(data?.change24h || 0);
+
+const currentCoinKey = useMemo(
+    () => selectedCoin.symbol.toLowerCase().replace("usdt",""),
+    [selectedCoin.symbol]
+);
 
   useEffect(() => {
     if (!price) return;
 
-    const key = selectedCoin.symbol.toLowerCase().replace('usdt', '');
+    const key = currentCoinKey;
 
     setCurrentPriceMap((p) => ({
       ...p,
       [key]: price,
     }));
-  }, [price, selectedCoin]);
+  }, [price, currentCoinKey]);
 
   useEffect(() => {
   if (!userId) return;
@@ -163,9 +181,7 @@ export default function TradePage() {
 ) => {
   if (!userId) return;
 
-  const coin = selectedCoin.symbol.toLowerCase().replace('usdt', '');
-
-  
+  const coin = currentCoinKey;
 
   // ================= LIMIT ORDER =================
   if (orderType === 'limit' && limitPrice) {
@@ -272,7 +288,24 @@ const newState = executeTrade({
   toast.success(`${type.toUpperCase()} executed`);
 };
 
-  if (!mounted) return null;
+const handleSelectCoin = useCallback(
+  (coin: Coin) => {
+    setSelectedCoin(coin);
+  },
+  []
+);
+
+const currentPosition = useMemo(() => {
+    return engineState.portfolio[
+        currentCoinKey
+    ];
+}, [currentCoinKey, engineState.portfolio]);
+
+const handleMobileSelectCoin = useCallback((coin: Coin) => {
+    setSelectedCoin(coin);
+    setMobileCoinSelected(true);
+}, []);
+ 
 
   /* ---------------- UI ---------------- */
  return (
@@ -289,8 +322,8 @@ const newState = executeTrade({
 <div className="hidden lg:flex lg:w-[240px] h-[620px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur flex-col">
   <CoinList
     selectedCoin={selectedCoin.symbol}
-    onSelectCoin={setSelectedCoin}
-  />
+    onSelectCoin={handleSelectCoin}
+/>
 </div>
 
 {/* MOBILE COIN LIST */}
@@ -299,10 +332,7 @@ const newState = executeTrade({
     <div className="lg:hidden h-[540px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur overflow-hidden">
       <CoinList
         selectedCoin={selectedCoin.symbol}
-        onSelectCoin={(coin) => {
-          setSelectedCoin(coin);
-          setMobileCoinSelected(true);
-        }}
+        onSelectCoin={handleMobileSelectCoin}
       />
     </div>
 
@@ -320,14 +350,14 @@ const newState = executeTrade({
 <div className="hidden lg:flex flex-1 flex-col">
 
   <div className="w-full h-[300px] sm:h-[420px] lg:h-[620px] border border-white/5 rounded-xl bg-[#0B1220]/80 backdrop-blur overflow-hidden">
-   <CandlestickChart
+  <CandlestickChart
   symbol={selectedCoin.symbol}
   coinName={selectedCoin.name}
-  price={parseFloat(data?.lastPrice || 0)}
-  change={parseFloat(data?.priceChangePercent || 0)}
-  high={parseFloat(data?.highPrice || 0)}
-  low={parseFloat(data?.lowPrice || 0)}
-  volume={parseFloat(data?.volume || 0)}
+  price={price}
+  change={change}
+  high={Number(data?.high24h || 0)}
+  low={Number(data?.low24h || 0)}
+  volume={Number(data?.volume24h || 0)}
 />
   </div>
 
@@ -357,12 +387,12 @@ const newState = executeTrade({
       <CandlestickChart
         symbol={selectedCoin.symbol}
         coinName={selectedCoin.name}
-        price={parseFloat(data?.lastPrice || 0)}
-        change={parseFloat(data?.priceChangePercent || 0)}
-        high={parseFloat(data?.highPrice || 0)}
-        low={parseFloat(data?.lowPrice || 0)}
-        volume={parseFloat(data?.volume || 0)}
-      />
+        price={price}
+        change={change}
+        high={Number(data?.high24h || 0)}
+        low={Number(data?.low24h || 0)}
+        volume={Number(data?.volume24h || 0)}
+/>
     </div>
 
   </div>
@@ -417,11 +447,7 @@ const newState = executeTrade({
           symbol={selectedCoin.symbol}
           coinName={selectedCoin.name}
           balance={engineState.balance}
-          position={
-            engineState.portfolio[
-              selectedCoin.symbol.toLowerCase().replace('usdt', '')
-            ]
-          }
+          position={currentPosition}
           onExecute={handleTrade}
           onUpdate={setAiData}
         />
@@ -432,11 +458,7 @@ const newState = executeTrade({
           coinId={selectedCoin.symbol}
           price={price}
           balance={engineState.balance}
-          position={
-            engineState.portfolio[
-              selectedCoin.symbol.toLowerCase().replace('usdt', '')
-            ]
-          }
+          position={currentPosition}
           onTrade={handleTrade}
         />
       </div>
@@ -450,18 +472,7 @@ const newState = executeTrade({
     </div>
   )}
 
-  {mobileTab === 'insights' && (
-    <div className="rounded-xl border border-white/5 bg-[#0B1220]/80 p-2">
-      <AIInsightsPanel
-        price={price}
-        change={change}
-        data={aiData}
-      />
-    </div>
-  )}
-
 </div>
-
 )} 
 
 
@@ -471,11 +482,7 @@ const newState = executeTrade({
     symbol={selectedCoin.symbol}
     coinName={selectedCoin.name}
     balance={engineState.balance}
-    position={
-      engineState.portfolio[
-        selectedCoin.symbol.toLowerCase().replace('usdt', '')
-      ]
-    }
+    position={currentPosition}
     onExecute={handleTrade}
     onUpdate={setAiData}
   />
@@ -492,13 +499,9 @@ const newState = executeTrade({
     <div className="h-[340px] rounded-xl border border-white/5 bg-[#0B1220]/80 backdrop-blur p-1.5 overflow-hidden">
         <TradePanel
           coinId={selectedCoin.symbol}
-          price={price}
+         price={price}
           balance={engineState.balance}
-          position={
-            engineState.portfolio[
-              selectedCoin.symbol.toLowerCase().replace('usdt', '')
-            ]
-          }
+          position={currentPosition}
           onTrade={handleTrade}
         />
       </div>
@@ -511,11 +514,13 @@ const newState = executeTrade({
       </div>
     </div>
 
-    {/* AI INSIGHTS */}
     <div className="col-span-12 lg:col-span-3">
-      <div className="h-[340px] rounded-xl border border-white/5 bg-[#0B1220]/80 backdrop-blur p-1.5 overflow-hidden">
-        <AIInsightsPanel price={price} change={change} data={aiData} />
-      </div>
+    <div className="h-[340px] rounded-xl border border-white/5 bg-[#0B1220]/80 backdrop-blur p-1.5 overflow-hidden">
+        
+     <div className="mt-2 border-t border-white/10 pt-2 h-[250px]">
+    <TradeInsightPanel symbol={selectedCoin.symbol} />
+  </div>
+  </div>
     </div>
 
 

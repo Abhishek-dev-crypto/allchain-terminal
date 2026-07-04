@@ -42,17 +42,18 @@ export type MarketSnapshot = {
   };
 };
 
-/**
- * 📊 helper
- */
+/* ================= HELPERS ================= */
+
 function avg(arr: number[]) {
-  if (!arr.length) return 0;
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
+  return arr.length
+    ? arr.reduce((a, b) => a + b, 0) / arr.length
+    : 0;
 }
 
-/**
- * ⚡ momentum classification
- */
+function clamp(n: number, min = 0, max = 100) {
+  return Math.min(max, Math.max(min, n));
+}
+
 function getMomentumDirection(
   value: number
 ): "ACCELERATING" | "DECELERATING" | "NEUTRAL" {
@@ -61,9 +62,16 @@ function getMomentumDirection(
   return "NEUTRAL";
 }
 
-/**
- * 🧠 SNAPSHOT ENGINE
- */
+function isBTC(symbol: string) {
+  return symbol?.toUpperCase().includes("BTC");
+}
+
+function isETH(symbol: string) {
+  return symbol?.toUpperCase().includes("ETH");
+}
+
+/* ================= ENGINE ================= */
+
 export function useMarketSnapshot(coins: Coin[]): MarketSnapshot {
   return useMemo(() => {
     if (!coins?.length) {
@@ -84,20 +92,24 @@ export function useMarketSnapshot(coins: Coin[]): MarketSnapshot {
       };
     }
 
-    const sorted = [...coins].sort((a, b) => b.change24h - a.change24h);
+    const sorted = [...coins].sort(
+      (a, b) => b.change24h - a.change24h
+    );
 
     const green = coins.filter((c) => c.change24h > 0);
     const red = coins.filter((c) => c.change24h < 0);
     const neutral = coins.filter((c) => c.change24h === 0);
 
-    const greenPercent = Math.round((green.length / coins.length) * 100);
-    const redPercent = Math.round((red.length / coins.length) * 100);
-    const neutralPercent = 100 - greenPercent - redPercent;
+    const greenPercent = (green.length / coins.length) * 100;
+    const redPercent = (red.length / coins.length) * 100;
+    const neutralPercent = clamp(
+      100 - greenPercent - redPercent
+    );
 
     const averageMomentum = avg(coins.map((c) => c.change24h));
 
     const leaders = sorted.slice(0, 5);
-    const laggards = sorted.slice(-5);
+    const laggards = sorted.slice(-5).reverse();
 
     const momentumStrength = avg(
       leaders.map((c) => Math.abs(c.change24h))
@@ -105,30 +117,50 @@ export function useMarketSnapshot(coins: Coin[]): MarketSnapshot {
 
     const direction = getMomentumDirection(averageMomentum);
 
-    const volatilityAvg = avg(coins.map((c) => Math.abs(c.change24h)));
+    /* ================= VOLATILITY (FIXED LOGIC) ================= */
+    const volatilityAvg = avg(
+      coins.map((c) => {
+        const range =
+          (c.high24h ?? 0) - (c.low24h ?? 0);
+        return Math.abs(range);
+      })
+    );
 
     const volatilityLevel =
-      volatilityAvg > 6 ? "HIGH" : volatilityAvg > 3 ? "MEDIUM" : "LOW";
+      volatilityAvg > 6
+        ? "HIGH"
+        : volatilityAvg > 3
+        ? "MEDIUM"
+        : "LOW";
 
-    const accumulationScore = greenPercent;
-    const distributionScore = redPercent;
+    /* ================= FLOW ================= */
 
     const flowState: MarketSnapshot["flow"]["state"] =
-      accumulationScore > distributionScore + 10
+      greenPercent > redPercent + 10
         ? "ACCUMULATION"
-        : distributionScore > accumulationScore + 10
+        : redPercent > greenPercent + 10
         ? "DISTRIBUTION"
         : "NEUTRAL";
 
-    const btc = coins.find((c) => c.symbol.toLowerCase() === "btc");
-    const eth = coins.find((c) => c.symbol.toLowerCase() === "eth");
+    /* ================= DOMINANCE (FIXED) ================= */
 
-    const totalCap = coins.reduce((s, c) => s + c.marketCap, 0) || 1;
+    const totalCap =
+      coins.reduce((s, c) => s + (c.marketCap || 0), 0) || 1;
 
-    const btcDominance = btc ? (btc.marketCap / totalCap) * 100 : 0;
-    const ethDominance = eth ? (eth.marketCap / totalCap) * 100 : 0;
+    const btcCap =
+      coins.find((c) => isBTC(c.symbol))?.marketCap || 0;
 
-    const altStrength = 100 - btcDominance - ethDominance;
+    const ethCap =
+      coins.find((c) => isETH(c.symbol))?.marketCap || 0;
+
+    const btcDominance = (btcCap / totalCap) * 100;
+    const ethDominance = (ethCap / totalCap) * 100;
+
+    const altStrength = clamp(
+      100 - btcDominance - ethDominance
+    );
+
+    /* ================= MARKET STATE ================= */
 
     const marketMood =
       greenPercent > 65
@@ -148,8 +180,8 @@ export function useMarketSnapshot(coins: Coin[]): MarketSnapshot {
       coins: sorted,
 
       breadth: {
-        greenPercent,
-        redPercent,
+        greenPercent: clamp(greenPercent),
+        redPercent: clamp(redPercent),
         neutralPercent,
       },
 
@@ -168,7 +200,7 @@ export function useMarketSnapshot(coins: Coin[]): MarketSnapshot {
 
       flow: {
         state: flowState,
-        score: accumulationScore,
+        score: greenPercent,
       },
 
       dominance: {

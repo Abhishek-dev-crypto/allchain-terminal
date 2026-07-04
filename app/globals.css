@@ -280,3 +280,155 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+/* Genie dim background */
+.genie-dim {
+  opacity: 0.25;
+  transition: opacity 0.2s ease;
+}
+
+/* Active highlight */
+.genie-active {
+  position: relative;
+  z-index: 50;
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 20px rgba(59,130,246,0.4);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.genie-active {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0px);
+  transition: all 0.6s ease;
+  z-index: 50;
+}
+
+.genie-inactive {
+  opacity: 0.25;
+  transform: scale(0.98);
+  filter: blur(2px);
+  transition: all 0.6s ease;
+}
+
+@keyframes genieFloat {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.genie-float {
+  animation: genieFloat 3s ease-in-out infinite;
+}
+
+.genie-eye {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: white;
+
+  box-shadow: 0 0 8px rgba(255,255,255,0.8);
+
+  animation: genieBlink 3s infinite;
+}
+
+@keyframes genieBlink {
+  0%,
+  88%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  90%,
+  92% {
+    transform: scaleY(0.02);
+  }
+}
+
+.genie-speaking-ring {
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(34,211,238,.4);
+
+  animation: genieSpeak 2s infinite;
+}
+
+@keyframes genieSpeak {
+  0% {
+    transform: scale(1);
+    opacity: .8;
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.tour-lock {
+  overflow: hidden !important;
+  height: 100% !important;
+}
+
+.genie-focus {
+  position: relative;
+  z-index: 10001;
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
+.genie-focus::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 16px;
+  border: 2px solid rgba(34, 211, 238, 0.8);
+  box-shadow: 0 0 40px rgba(34, 211, 238, 0.3);
+  pointer-events: none;
+}
+
+.genie-dim {
+  opacity: 0.3;
+  filter: blur(1px);
+  transform: scale(0.98);
+  transition: all 0.3s ease;
+}
+
+/* everything slightly fades during tour */
+body[data-tour] [data-genie] {
+  transition: all 0.25s ease;
+}
+
+/* dim all non-focused elements */
+body[data-tour] [data-genie] {
+  opacity: 0.25;
+  filter: blur(1px);
+  transform: scale(0.98);
+}
+
+/* focused element pops */
+body[data-tour] [data-genie="ai-preview"],
+body[data-tour] [data-genie="market-block"],
+body[data-tour] [data-genie="why-traders-fail"] {
+  opacity: 1 !important;
+  filter: blur(0) !important;
+  transform: scale(1.02);
+  z-index: 50;
+  position: relative;
+}
+
+.genie-focus {
+  outline: 2px solid rgba(34, 211, 238, 0.9);
+  box-shadow: 0 0 40px rgba(34, 211, 238, 0.3);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}

@@ -78,7 +78,8 @@ export function buildWhaleInsights(
   const sortedByCap =
     [...coins].sort(
       (a, b) =>
-        b.marketCap - a.marketCap
+        (b.marketCap ?? 0) -
+      (a.marketCap ?? 0)
     );
 
   const topCaps =
@@ -215,8 +216,7 @@ export function buildWhaleInsights(
         change24h:
           coin.change24h,
 
-        marketCap:
-          coin.marketCap,
+         marketCap: coin.marketCap ?? 0,
       }));
 
   return {

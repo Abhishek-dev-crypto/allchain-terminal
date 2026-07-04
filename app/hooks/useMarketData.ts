@@ -1,24 +1,38 @@
-import useSWR from 'swr';
+"use client";
 
-// Define your API endpoint
-const API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd';
+import useSWR from "swr";
+import type { Coin } from "@/lib/types/coin";
 
-// Fetcher function (to be used by SWR)
-const fetcher = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Failed to fetch market data');
-  return response.json();
+const fetcher = async (url: string): Promise<Coin[]> => {
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch market data");
+  }
+
+  return res.json();
 };
 
-// Custom hook for fetching market data
 export function useMarketData() {
-  const { data, error, isLoading } = useSWR(API_URL, fetcher, {
-    refreshInterval: 60000, // Auto-refresh every 60 seconds
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR<Coin[]>("/api/market", fetcher, {
+    refreshInterval: 60_000,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    dedupingInterval: 30_000,
+    keepPreviousData: true,
   });
 
   return {
-    data,
+    data: data ?? [],
     isLoading,
     error,
+    isValidating,
+    refresh: mutate,
   };
 }

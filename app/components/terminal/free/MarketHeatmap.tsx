@@ -328,7 +328,7 @@ export default function MarketHeatmap() {
 
     return Math.max(
       ...coins.map(
-        (c) => c.volume ?? 0
+        (c) => c.volume24h ?? 0
       )
     );
   }, [coins]);
@@ -338,7 +338,7 @@ export default function MarketHeatmap() {
       .map((coin) => ({
         ...coin,
 
-        sector: getSector(coin.id),
+        sector: getSector(coin.id ?? ""),
 
         whale: getWhaleSignal(
           coin.change24h
@@ -354,16 +354,17 @@ export default function MarketHeatmap() {
           100,
           Math.round(
             coin.change24h * 8 +
-              ((coin.volume ?? 0) /
+              ((coin.volume24h ?? 0) /
                 maxVolume) *
                 50
           )
         ),
       }))
       .sort(
-        (a, b) =>
-          b.marketCap - a.marketCap
-      );
+  (a, b) =>
+    (b.marketCap ?? 0) -
+    (a.marketCap ?? 0)
+);
   }, [
     coins,
     getSector,
@@ -827,7 +828,7 @@ ${fullscreen
 
   ${getColor(coin.change24h)}
 
-  ${getVolumeOpacity(coin.volume)}
+  ${getVolumeOpacity(coin.volume24h)}
 `}
           >
             {fullscreen && coin.change24h > 4 && (

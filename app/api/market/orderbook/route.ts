@@ -1,9 +1,30 @@
-// app/api/market/orderbook/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { getCache, setCache } from "@/lib/marketCache";
 
-const BINANCE_BASE = "https://api.binance.com/api/v3";
+function generateSyntheticOrderbook(price: number) {
+  const depth = 10;
+  const spread = price * 0.002; // 0.2%
+
+  const bids = [];
+  const asks = [];
+
+  for (let i = 0; i < depth; i++) {
+    const bidPrice = price - spread * (i + 1);
+    const askPrice = price + spread * (i + 1);
+
+    bids.push([
+      bidPrice.toFixed(2),
+      (Math.random() * 5 + 1).toFixed(4),
+    ]);
+
+    asks.push([
+      askPrice.toFixed(2),
+      (Math.random() * 5 + 1).toFixed(4),
+    ]);
+  }
+
+  return { bids, asks };
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,36 +33,35 @@ export async function GET(req: NextRequest) {
 
     const key = `orderbook:${symbol}`;
 
-    // 1. Redis cache
+    // 1. Cache
     const cached = await getCache(key);
-
     if (cached) {
       return NextResponse.json(cached);
     }
 
-    // 2. Binance
-    const res = await fetch(
-      `${BINANCE_BASE}/depth?symbol=${symbol}&limit=20`
-    );
+    // 2. Get reference price from ticker cache or fallback
+    const tickerCacheKey = `ticker:${symbol}`;
+    const ticker = (await getCache(tickerCacheKey)) as
+  | { lastPrice: number }
+  | null;
 
-    const data = await res.json();
+    const price =
+      ticker?.lastPrice || 60000; // fallback safe price
 
-    const result = {
-      bids: data.bids || [],
-      asks: data.asks || [],
-    };
+    // 3. Generate synthetic orderbook
+    const result = generateSyntheticOrderbook(Number(price));
 
-    // 3. Cache for 3 seconds
-    await setCache(key, result, 3);
+    // 4. Cache
+    await setCache(key, result, 2);
 
     return NextResponse.json(result);
-
   } catch (err) {
     console.error("Orderbook API Error:", err);
 
     return NextResponse.json(
-      { error: "Failed to fetch order book" },
-      { status: 500 }
+      { bids: [], asks: [] },
+      { status: 200 }
     );
   }
 }
+

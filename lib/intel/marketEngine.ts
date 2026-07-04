@@ -167,7 +167,10 @@ export function buildMarketEngine(coins: Coin[]): MarketEngineOutput {
   // ======================
   // DOMINANCE
   // ======================
-  const totalCap = coins.reduce((s, c) => s + c.marketCap, 0) || 1;
+  const totalCap = coins.reduce(
+  (s, c) => s + (c.marketCap ?? 0),
+  0
+) || 1;
 
   const btc = coins.find((c) => c.symbol === "BTC");
   const eth = coins.find((c) => c.symbol === "ETH");

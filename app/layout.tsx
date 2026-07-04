@@ -1,14 +1,13 @@
 "use client";
 
-
 import "./globals.css";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
-
+import GenieModal from "./components/genie/GenieModal";
 
 import { NotificationProvider } from "./contexts/NotificationContext";
 import ClientWrapper from "./components/ClientWrapper";
-
+import { GenieRuntimeProvider } from "./contexts/GenieRuntimeContext";
 
 export default function RootLayout({
   children,
@@ -17,7 +16,6 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
 
-
   return (
     <html lang="en">
       <body>
@@ -25,7 +23,6 @@ export default function RootLayout({
           src="https://www.googletagmanager.com/gtag/js?id=G-W3ERYPVTN7"
           strategy="afterInteractive"
         />
-
 
         <Script id="google-analytics" strategy="afterInteractive">
           {`
@@ -38,7 +35,6 @@ export default function RootLayout({
           `}
         </Script>
 
-
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`
             (function(c,l,a,r,i,t,y){
@@ -49,23 +45,16 @@ export default function RootLayout({
           `}
         </Script>
 
-
         <NotificationProvider>
           <ClientWrapper>
-            
-
-
+            <GenieRuntimeProvider>
               {children}
 
-
-
-            
+              {pathname !== "/trade" && <GenieModal />}
+            </GenieRuntimeProvider>
           </ClientWrapper>
         </NotificationProvider>
-
-
       </body>
     </html>
   );
 }
-

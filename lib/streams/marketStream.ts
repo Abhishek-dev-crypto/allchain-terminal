@@ -1,5 +1,5 @@
 import type { Coin } from "@/lib/types/coin";
-
+import { getMarketSnapshot } from "@/lib/intel/core/marketSnapshotStore";
 
 export type MarketStreamResponse = {
   coins: Coin[];
@@ -9,18 +9,12 @@ export type MarketStreamResponse = {
 
 export async function fetchMarketStream(): Promise<MarketStreamResponse> {
   try {
-    const response = await fetch("/api/intel/heatmap");
-
-    if (!response.ok) {
-      throw new Error("Failed market stream fetch");
-    }
-
-    const coins = await response.json();
+    const data = await getMarketSnapshot();
 
     return {
-      coins,
-      timestamp: Date.now(),
-      status: "CONNECTED",
+      coins: data.coins,
+      timestamp: data.timestamp,
+      status: data.coins.length ? "CONNECTED" : "DISCONNECTED",
     };
   } catch (error) {
     console.error("Market stream error:", error);

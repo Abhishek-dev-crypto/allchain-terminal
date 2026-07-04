@@ -1,125 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
-type CoinData = {
-  usd: number;
-  usd_24h_change: number;
-};
+import { useMarketOverview } from "@/lib/hooks/useMarketOverview";
 
-type GlobalData = {
-  data: {
-    total_market_cap: { usd: number };
-    total_volume: { usd: number };
-   market_cap_change_percentage_24h_usd?: number;
-    market_cap_percentage: {
-      btc: number;
-    };
-    active_cryptocurrencies: number;
-    markets: number;
-  };
-};
 
 export default function MarketOverview() {
-  const [btc, setBtc] = useState<CoinData | null>(null);
-  const [eth, setEth] = useState<CoinData | null>(null);
-  const [global, setGlobal] = useState<GlobalData | null>(null);
-  const [fearGreed, setFearGreed] = useState<number | null>(null);
-  const [btcDominance, setBtcDominance] = useState<number | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-
-      try {
-        console.log("Refreshing Market Overview...");
-
-        // =========================
-        // BTC + ETH
-        // =========================
-        const res = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true"
-        );
-
-        const data = await res.json();
-
-        setBtc({
-          usd: data.bitcoin.usd,
-          usd_24h_change: data.bitcoin.usd_24h_change,
-        });
-
-        setEth({
-          usd: data.ethereum.usd,
-          usd_24h_change: data.ethereum.usd_24h_change,
-        });
-
-        // =========================
-        // GLOBAL MARKET
-        // =========================
-
-        let globalData: GlobalData | null = null;
-
-try {
-  const globalRes = await fetch("/api/intel/global");
-
-  if (!globalRes.ok) {
-    throw new Error("Failed global market fetch");
-  }
-
-  globalData = await globalRes.json();
-
-  setGlobal(globalData);
-
-  setBtcDominance(
-    globalData?.data?.market_cap_percentage?.btc || null
-  );
-} catch (err) {
-  console.error("Global market fetch failed:", err);
-}
-
-        // =========================
-        // FEAR & GREED
-        // =========================
-        const fgRes = await fetch(
-          "https://api.alternative.me/fng/?limit=1"
-        );
-
-       const fgData = await fgRes.json();
-
-        const fearGreedValue = Number(fgData.data[0].value);
-
-        setFearGreed(fearGreedValue);
-         const marketChange =
-          globalData?.data?.market_cap_change_percentage_24h_usd || 0;
-
-
-        setLastUpdated(new Date());
-      } catch (err) {
-        console.error("MarketOverview fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    setLoading(true);
-
-    fetchData();
-
-   
-
-    const interval = setInterval(fetchData, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
+  
+const {
+  btc,
+  eth,
+  global,
+  fearGreed,
+  btcDominance,
+  trendDirection,
+  loading,
+  lastUpdated,
+} = useMarketOverview();
   // =========================
   // MARKET MOOD
   // =========================
   const getMarketMood = (value: number | null) => {
-    if (!value) return "UNKNOWN";
+   if (value == null) return "--";
 
     if (value < 25) return "EXTREME FEAR";
     if (value < 45) return "FEAR";
@@ -131,40 +33,6 @@ try {
 
   const mood = getMarketMood(fearGreed);
 
-  // =========================
-  // TREND DIRECTION
-  // =========================
-  const trendDirection = useMemo(() => {
-    const btcChange = btc?.usd_24h_change ?? 0;
-    const ethChange = eth?.usd_24h_change ?? 0;
-    const marketChange =
-      global?.data?.market_cap_change_percentage_24h_usd ?? 0;
-
-    const avg = (btcChange + ethChange + marketChange) / 3;
-
-    if (avg > 2) {
-      return {
-        label: "BULLISH",
-        color: "text-emerald-400",
-        bg: "bg-emerald-500/10",
-      };
-    }
-
-    if (avg < -2) {
-      return {
-        label: "DEFENSIVE",
-        color: "text-red-400",
-        bg: "bg-red-500/10",
-      };
-    }
-
-    return {
-      label: "STABLE",
-      color: "text-yellow-400",
-      bg: "bg-yellow-500/10",
-    };
-  }, [btc, eth, global]);
-  
   // =========================
   // LOADING
   // =========================
@@ -179,7 +47,7 @@ try {
   }
 
   const formatMarketNumber = (num?: number) => {
-  if (!num) return "--";
+  if (num == null) return "--";
 
   if (num >= 1_000_000_000_000) {
     return `$${(num / 1_000_000_000_000).toFixed(2)}T`;

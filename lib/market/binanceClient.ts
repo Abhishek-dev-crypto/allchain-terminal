@@ -43,7 +43,18 @@ export async function getKlines(symbol: string, interval = "1m") {
     `${BINANCE_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=200`
   );
 
-  if (!res.ok) throw new Error("Binance klines failed");
+  if (!res.ok) {
+  const body = await res.text();
+
+  console.error("Binance klines error", {
+    status: res.status,
+    body,
+    symbol,
+    interval,
+  });
+
+  throw new Error(`Binance klines failed (${res.status})`);
+}
 
   const data = await res.json();
 

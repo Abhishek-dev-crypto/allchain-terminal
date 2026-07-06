@@ -120,7 +120,7 @@ const safeUI = ui ?? {
   }
 };
 
-const isLoading = loading || !ui || !ai;
+const isLoading = loading && !ui;
 
   const isBuy = safeAI.action === "BUY";
   const isSell = safeAI.action === "SELL";

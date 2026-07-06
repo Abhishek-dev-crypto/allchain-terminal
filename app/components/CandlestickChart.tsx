@@ -141,11 +141,18 @@ const CandlestickChart = React.memo(function CandlestickChart({
     let alive = true;
     let interval: NodeJS.Timeout;
 
-    
+    const controller = new AbortController();
 
     const load = async () => {
       try {
-        const res = await fetch(`/api/market/snapshot?symbol=${symbol}`);
+       const res = await fetch(`/api/market/snapshot?symbol=${symbol}`, {
+  signal: controller.signal,
+});
+
+if (!res.ok) {
+  throw new Error(`Snapshot ${res.status}`);
+}
+
 const data = await res.json();
 
 
@@ -187,6 +194,7 @@ const raw = data.candles?.[timeframe] || [];
 
     return () => {
       alive = false;
+      controller.abort();
       clearInterval(interval);
     };
   }, [symbol, timeframe]);
@@ -197,6 +205,10 @@ const raw = data.candles?.[timeframe] || [];
     },
     []
 );
+
+  useEffect(() => {
+    firstLoad.current = true;
+}, [symbol]);
 
 
   /* ---------------- UI ---------------- */

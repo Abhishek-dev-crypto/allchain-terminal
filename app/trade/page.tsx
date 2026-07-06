@@ -446,6 +446,7 @@ const handleMobileSelectCoin = useCallback((coin: Coin) => {
         <AIEngine
           symbol={selectedCoin.symbol}
           coinName={selectedCoin.name}
+          price={price}
           balance={engineState.balance}
           position={currentPosition}
           onExecute={handleTrade}
@@ -481,6 +482,7 @@ const handleMobileSelectCoin = useCallback((coin: Coin) => {
   <AIEngine
     symbol={selectedCoin.symbol}
     coinName={selectedCoin.name}
+    price={price}
     balance={engineState.balance}
     position={currentPosition}
     onExecute={handleTrade}

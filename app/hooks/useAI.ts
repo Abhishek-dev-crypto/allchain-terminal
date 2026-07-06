@@ -37,65 +37,63 @@ export function useAI(symbol: string) {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  const runAI = useCallback(async () => {
-    if (!symbol) return;
+ const runAI = useCallback(async () => {
+  if (!symbol) return;
 
-    setLoading(true);
-    setError(null);
+  // Cancel any previous request
+  abortRef.current?.abort();
 
-    try {
-      /* ================= PHASE 1 ================= */
-      setPhase("SCANNING");
-      await new Promise((r) => setTimeout(r, 300));
+  const controller = new AbortController();
+  abortRef.current = controller;
 
-      /* ================= PHASE 2 ================= */
-      setPhase("PROCESSING");
+  // Reset UI for the new symbol
+  setLoading(true);
+  setError(null);
+  setAI(null);
+  setUI(null);
+  setPhase("SCANNING");
 
-     
+  try {
+    await new Promise((r) => setTimeout(r, 300));
 
-      abortRef.current?.abort();
+    setPhase("PROCESSING");
 
-      const controller = new AbortController();
-      abortRef.current = controller;
+    const res = await fetch("/api/ai/engine", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ symbol }),
+    });
 
-
-      const res = await fetch("/api/ai/engine", {
-        method: "POST",
-        signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol }),
-      });
-
-      if (!res.ok) {
+    if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
-      }
-
-      const json: AIEngineAPIResponse = await res.json();
-
-      if (!json.success) {
-        setError(json.error || "AI engine failed");
-       
-        setPhase("IDLE");
-        return;
-      }
-
-      /* ================= STORE RESULTS ================= */
-      setAI(json.ai);
-      setUI(json.ui);
-
-      /* ================= PHASE 3 ================= */
-      setPhase("READY");
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return;
     }
-      setError(err instanceof Error ? err.message : "Network error");
-    
+
+    const json: AIEngineAPIResponse = await res.json();
+
+    if (!json.success) {
+      setError(json.error || "AI engine failed");
       setPhase("IDLE");
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [symbol]);
+
+    setAI(json.ai);
+    setUI(json.ui);
+
+    setPhase("READY");
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return;
+    }
+
+    setError(err instanceof Error ? err.message : "Network error");
+    setPhase("IDLE");
+  } finally {
+    setLoading(false);
+  }
+}, [symbol]);
 
   useEffect(() => {
   return () => {

@@ -50,7 +50,7 @@ export default function RootLayout({
             <GenieRuntimeProvider>
               {children}
 
-              {pathname !== "/trade" && <GenieModal />}
+              {pathname === "/" && <GenieModal />}
             </GenieRuntimeProvider>
           </ClientWrapper>
         </NotificationProvider>

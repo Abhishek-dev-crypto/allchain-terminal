@@ -68,28 +68,28 @@ const focusBoost = emotion === "focused" ? 1.2 : 1;
 
 export default function GenieModal() {
   const [mounted, setMounted] = useState(false);
-  const [minimized, setMinimized] = useState(false);
+
   const [hovered, setHovered] = useState(false);
   const [message, setMessage] = useState("");
 
   const currentSectionRef = useRef<string | null>(null);
 
  const {
-  state,
-  startTour,
-  currentSection,
-  setCurrentSection,
+    state,
+    startTour,
+    currentSection,
+    setCurrentSection,
+    setMinimized,
 } = useGenie();
 
- const [mouse, setMouse] = useState({ x: 0, y: 0 });
+const minimized = state.minimized;
+
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [blink, setBlink] = useState(false);
 
   const [targetPos, setTargetPos] = useState({ x: 0, y: 0 });
   const [hasTarget, setHasTarget] = useState(false);
 
-useEffect(() => {
-  console.log("Current Section:", currentSection);
-}, [currentSection]);
 
   useEffect(() => {
     if (minimized) return;
@@ -370,9 +370,8 @@ if (isTourRunning) return null;
     <div
       className="fixed inset-0 flex items-center justify-center"
       style={{
-        background: "rgba(255,0,0,0.2)",
-        zIndex: 9999,
-      }}
+    zIndex: 9999,
+}}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
@@ -396,7 +395,10 @@ if (isTourRunning) return null;
           </div>
 
           <button
-            onClick={() => setMinimized(true)}
+            onClick={() => {
+  localStorage.setItem("genie_seen_v1", "true");
+  setMinimized(true);
+}}
             className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition flex items-center justify-center"
           >
             ✕
@@ -418,8 +420,13 @@ if (isTourRunning) return null;
                  <GenieBrows size="small" />
 
                   <div className="flex gap-2">
-                    <div className="genie-eye" />
-                    <div className="genie-eye" />
+                    <GenieEyes
+    emotion={emotion}
+    x={gazeX}
+    y={gazeY}
+    blink={blink}
+/>
+                   
                   </div>
 
                   <div className="w-4 h-2 border-b-2 border-white rounded-b-full" />
@@ -447,7 +454,7 @@ onClick={() => {
   }
 
   startTour("landing");
-  setMinimized(true);
+  
 }}
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-medium shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:scale-105 transition"
             >
@@ -455,7 +462,10 @@ onClick={() => {
             </button>
 
             <button
-              onClick={() => setMinimized(true)}
+              onClick={() => {
+  localStorage.setItem("genie_seen_v1", "true");
+  setMinimized(true);
+}}
               className="px-3 py-2 text-sm text-gray-400 hover:text-white transition"
             >
               Skip for now

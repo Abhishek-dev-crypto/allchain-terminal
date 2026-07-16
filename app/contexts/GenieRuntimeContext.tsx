@@ -32,6 +32,8 @@ export type GenieState = {
   currentSection: string | null;
   tourActive: boolean;
   mood: GenieMood;
+
+   minimized: boolean; // NEW
 };
 
 export type GenieContextType = {
@@ -53,6 +55,8 @@ export type GenieContextType = {
   setCurrentSection: (section: string | null) => void;
 
   setActiveTarget: (target: string | null) => void;
+
+  setMinimized: (value: boolean) => void;   // <-- ADD THIS
 };
 
 /**
@@ -88,6 +92,7 @@ const initialState: GenieState = {
   currentSection: null,
   tourActive: false,
   mood: "idle",
+  minimized: false,
 };
 
 /**
@@ -129,6 +134,11 @@ useEffect(() => {
 
   if (saved?.tourActive && !isGenieBlocked()) {
   setState(saved);
+} else if (hasSeenGenie()) {
+  setState({
+    ...initialState,
+    minimized: true,
+  });
 } else {
   setState(initialState);
 }
@@ -138,9 +148,6 @@ useEffect(() => {
 
 useEffect(() => {
   if (typeof window === "undefined") return;
-
-  const seen = hasSeenGenie();
-  if (seen) return;
 
   if (hasSeenGenie()) return;
   if (isGenieBlocked()) return;
@@ -179,14 +186,15 @@ const startTour = (stage: GenieStage = "landing") => {
   localStorage.setItem(GENIE_STATUS_KEY, "active");
 
   setState({
-    ...initialState,
-    stage,
-    step: 0,
-    intent: null,
-    tourActive: true,
-    activeTarget: steps[0] ?? null,
-    mood: "idle",
-  });
+  ...initialState,
+  minimized: true,
+  stage,
+  step: 0,
+  intent: null,
+  tourActive: true,
+  activeTarget: steps[0] ?? null,
+  mood: "idle",
+});
 };
 
   const saveState = (state: GenieState) => {
@@ -256,6 +264,7 @@ const isGenieBlocked = (): boolean => {
 
     if (tourCompleted && typeof window !== "undefined") {
     localStorage.setItem(GENIE_STATUS_KEY, "completed");
+    localStorage.setItem(GENIE_SEEN_KEY, "true");
   }
 
     return {
@@ -267,8 +276,6 @@ const isGenieBlocked = (): boolean => {
     };
   });
 };
-
-
 
  const previousStep = () => {
   setState((prev) => {
@@ -331,6 +338,13 @@ const isGenieBlocked = (): boolean => {
   }));
 };
 
+const setMinimized = (value: boolean) => {
+  setState(prev => ({
+    ...prev,
+    minimized: value,
+  }));
+};
+
   /**
    * Memoized context value (prevents rerenders)
    */
@@ -352,6 +366,7 @@ const isGenieBlocked = (): boolean => {
     
     setCurrentSection,
     hydrated, // 👈
+    setMinimized,
   }),
   [state, hydrated]
 );

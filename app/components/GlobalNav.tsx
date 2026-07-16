@@ -261,9 +261,9 @@ function NavLinks({
       : 'hover:text-blue-400';
 
   const links = [
-  { name: 'Trade', href: '/trade' },
-  { name: 'Market', href: '/market' },
-  { name: 'NFT', href: '/nft' },
+  { name: 'Terminal', href: '/trade' },
+  { name: 'Markets', href: '/market' },
+  { name: 'NFTs', href: '/nft' },
   { name: 'Learn', href: '/learn' },
 ];
 

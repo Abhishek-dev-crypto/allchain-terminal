@@ -135,33 +135,34 @@ const CandlestickChart = React.memo(function CandlestickChart({
 
   const firstLoad = useRef(true);
   /* ---------------- DATA FETCH ---------------- */
-  useEffect(() => {
-    if (!symbol) return;
+ useEffect(() => {
+  if (!symbol) return;
 
-    let alive = true;
-    let interval: NodeJS.Timeout;
+  let alive = true;
 
-    const controller = new AbortController();
+  const controller = new AbortController();
 
-    const load = async () => {
-      try {
-       const res = await fetch(`/api/market/snapshot?symbol=${symbol}`, {
-  signal: controller.signal,
-});
+  const load = async () => {
+    try {
+      const res = await fetch(
+        `/api/market/snapshot?symbol=${symbol}`,
+        {
+          signal: controller.signal,
+        }
+      );
 
-if (!res.ok) {
-  throw new Error(`Snapshot ${res.status}`);
-}
+      if (!res.ok) {
+        throw new Error(`Snapshot ${res.status}`);
+      }
 
-const data = await res.json();
+      const data = await res.json();
 
+      const raw = data.candles?.[timeframe] || [];
 
-const raw = data.candles?.[timeframe] || [];
+      if (!alive || !Array.isArray(raw)) return;
 
-
-        if (!alive || !Array.isArray(raw)) return;
-
-        const candles: CandlestickData<UTCTimestamp>[] = raw.map((d: any) => ({
+      const candles: CandlestickData<UTCTimestamp>[] =
+        raw.map((d: any) => ({
           time: Math.floor(Number(d.time) / 1000) as UTCTimestamp,
           open: Number(d.open),
           high: Number(d.high),
@@ -169,35 +170,57 @@ const raw = data.candles?.[timeframe] || [];
           close: Number(d.close),
         }));
 
-        const volumes: HistogramData<UTCTimestamp>[] = raw.map((d: any) => ({
-         time: Math.floor(Number(d.time) / 1000) as UTCTimestamp,
+      const volumes: HistogramData<UTCTimestamp>[] =
+        raw.map((d: any) => ({
+          time: Math.floor(Number(d.time) / 1000) as UTCTimestamp,
           value: Number(d.volume || 0),
-          color: d.close > d.open ? '#22c55e' : '#ef4444',
+          color:
+            d.close > d.open
+              ? '#22c55e'
+              : '#ef4444',
         }));
 
-        candleRef.current?.setData(candles);
-        volumeRef.current?.setData(volumes);
+      candleRef.current?.setData(candles);
+      volumeRef.current?.setData(volumes);
 
-       
+      if (firstLoad.current) {
+        chartRef.current
+          ?.timeScale()
+          .fitContent();
 
-        if (firstLoad.current) {
-          chartRef.current?.timeScale().fitContent();
-          firstLoad.current = false;
-        }
-      } catch (err) {
-        console.error('Chart load error:', err);
+        firstLoad.current = false;
       }
-    };
 
-    load();
-    interval = setInterval(load, 5000);
+    } catch (err: any) {
 
-    return () => {
-      alive = false;
+      if (err.name === "AbortError") {
+        return;
+      }
+
+      console.error(
+        "Chart load error:",
+        err
+      );
+    }
+  };
+
+
+  load();
+
+  const interval = setInterval(load, 5000);
+
+
+  return () => {
+    alive = false;
+
+    clearInterval(interval);
+
+    if (!controller.signal.aborted) {
       controller.abort();
-      clearInterval(interval);
-    };
-  }, [symbol, timeframe]);
+    }
+  };
+
+}, [symbol, timeframe]);
 
   const handleTimeframe = useCallback(
     (tf: typeof TIMEFRAMES[number]) => {

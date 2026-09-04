@@ -8,6 +8,12 @@ import type { buildMarketIntelligence } from "@/lib/intel/buildMarketIntelligenc
 
 import type { buildFreeNarrativeEngine } from "@/lib/intel/freeNarrativeEngine";
 
+import type { buildSectorRotation } from "@/lib/intel/sectorRotation";
+
+import type { AlphaSignalsOutput } from "@/lib/intel/alphaSignals";
+
+import type { PredictiveAIOutput } from "@/lib/intel/predictiveAI";
+
 
 export type MarketRegime =
   | "RISK_ON"
@@ -24,6 +30,12 @@ export type StreamStatus =
 export type MarketContextType = {
   coins: Coin[];
 
+  alphaSignals: AlphaSignalsOutput | null;
+
+  predictiveAI: PredictiveAIOutput[] | null;
+
+  predictiveAILoading: boolean;
+
  snapshot: ReturnType<typeof useMarketSnapshot>;
 
     engine: ReturnType<typeof buildMarketEngine>;
@@ -31,6 +43,8 @@ export type MarketContextType = {
     intelligence: ReturnType<typeof buildMarketIntelligence>;
 
     narratives: ReturnType<typeof buildFreeNarrativeEngine>;
+
+    rotation: ReturnType<typeof buildSectorRotation>;
 
   loading: boolean;
 

@@ -89,11 +89,21 @@ export type IntelligenceLens =
   | "heatmap"
   | "regime"
   | "whales"
-  | "alerts";
+  | "alerts"
+  | "alpha_signals"
+  | "predictive_ai"
+  | "smart_money"
+  | "liquidity_heat"
+  | "whale_intent"
+  | "regime_forecast"
+  | "edge_opportunities"
+  | "market_regime";
 
-
-
-export const PREMIUM_LENSES = [
+export const PREMIUM_LENSES: {
+  id: IntelligenceLens;
+  label: string;
+  description: string;
+}[] = [
   {
     id: "alpha_signals",
     label: "Alpha Signals",
@@ -118,6 +128,11 @@ export const PREMIUM_LENSES = [
     id: "whale_intent",
     label: "Whale Intent",
     description: "Pre-movement large wallet behavior analysis",
+  },
+  {
+    id: "market_regime",
+    label: "market_regime",
+    description: " regime shift prediction engine",
   },
   {
     id: "regime_forecast",

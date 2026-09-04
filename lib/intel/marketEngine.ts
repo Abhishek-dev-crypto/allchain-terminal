@@ -1,4 +1,5 @@
 import type { Coin } from "@/lib/types/coin";
+
 import {
   calculateRegimeConfidence,
   calculateMarketHealth,
@@ -13,6 +14,19 @@ import {
   calculateVolatilityScore,
 } from "@/lib/intel/helpers";
 
+import {
+  getMarketSector,
+} from "@/lib/intel/core/sectorMap";
+
+import {
+  buildSectorRotation,
+  type SectorRotation,
+} from "@/lib/intel/sectorRotation";
+
+/* ========================= */
+/* MARKET TYPES              */
+/* ========================= */
+
 export type MarketRegime =
   | "RISK_ON"
   | "RISK_OFF"
@@ -20,7 +34,10 @@ export type MarketRegime =
   | "CHOPPY";
 
 export type MarketEngineOutput = {
-  flows: { name: string; avg: number }[];
+  flows: {
+    name: string;
+    avg: number;
+  }[];
 
   avgFlow: number;
   positiveBreadth: number;
@@ -31,7 +48,10 @@ export type MarketEngineOutput = {
 
   regime: MarketRegime;
 
-  momentum: "ACCELERATING" | "DECELERATING" | "NEUTRAL";
+  momentum:
+    | "ACCELERATING"
+    | "DECELERATING"
+    | "NEUTRAL";
 
   leaders: Coin[];
   laggards: Coin[];
@@ -43,203 +63,502 @@ export type MarketEngineOutput = {
   regimeConfidence: number;
   marketHealth: number;
 
-  volatilityState: "LOW" | "NORMAL" | "ELEVATED" | "EXTREME";
-  breadthState: "STRONG" | "WEAK" | "NARROW";
-  stability: "STABLE" | "FRAGILE" | "UNSTABLE";
+  volatilityState:
+    | "LOW"
+    | "NORMAL"
+    | "ELEVATED"
+    | "EXTREME";
+
+  breadthState:
+    | "STRONG"
+    | "WEAK"
+    | "NARROW";
+
+  stability:
+    | "STABLE"
+    | "FRAGILE"
+    | "UNSTABLE";
 
   signals: {
-    momentum: { direction: string; strength: number };
-    flow: { state: string; score: number };
-    sentiment: "BULLISH" | "BEARISH" | "NEUTRAL";
+    momentum: {
+      direction: string;
+      strength: number;
+    };
+
+    flow: {
+      state: string;
+      score: number;
+    };
+
+    sentiment:
+      | "BULLISH"
+      | "BEARISH"
+      | "NEUTRAL";
   };
+
+  sectorRotation: SectorRotation;
 };
 
-const sectorMap: Record<string, string> = {
-  BTC: "LARGE_CAP",
-  ETH: "L1",
-  SOL: "L1",
-  AVAX: "L1",
-  SUI: "L1",
-  LINK: "INFRA",
-  NEAR: "INFRA",
-  UNI: "DEFI",
-  AAVE: "DEFI",
-  DOGE: "MEME",
-  SHIB: "MEME",
-  XRP: "PAYMENTS",
-  XLM: "PAYMENTS",
-};
+/* ========================= */
+/* EMPTY ENGINE              */
+/* ========================= */
 
-export function buildMarketEngine(coins: Coin[]): MarketEngineOutput {
+function emptySectorRotation(): SectorRotation {
+  return {
+    sectors: [],
+
+    dominantSector: null,
+    emergingSector: null,
+    weakeningSector: null,
+
+    marketBreadth: 0,
+    rotationConfidence: 0,
+
+    marketBias: "BALANCED_FLOW",
+
+    leaders: [],
+    laggards: [],
+
+    earlyRotationSectors: [],
+
+    narrative: {
+      headline: "No sector data available",
+      subtext:
+        "Waiting for sufficient market observations.",
+    },
+  };
+}
+
+/* ========================= */
+/* MARKET ENGINE              */
+/* ========================= */
+
+export function buildMarketEngine(
+  coins: Coin[],
+  previousSectorState?: Record<string, number>
+): MarketEngineOutput {
   if (!coins.length) {
     return {
       flows: [],
+
       avgFlow: 0,
       positiveBreadth: 0,
       negativeBreadth: 0,
+
       volatility: 0,
       participation: 0,
+
       regime: "CHOPPY",
       momentum: "NEUTRAL",
+
       leaders: [],
       laggards: [],
+
       btcDominance: 0,
       ethDominance: 0,
       altStrength: 0,
+
       regimeConfidence: 0,
       marketHealth: 0,
+
       volatilityState: "LOW",
       breadthState: "NARROW",
       stability: "STABLE",
+
       signals: {
-        momentum: { direction: "NEUTRAL", strength: 0 },
-        flow: { state: "NEUTRAL", score: 0 },
+        momentum: {
+          direction: "NEUTRAL",
+          strength: 0,
+        },
+
+        flow: {
+          state: "NEUTRAL",
+          score: 0,
+        },
+
         sentiment: "NEUTRAL",
       },
+
+      sectorRotation:
+        emptySectorRotation(),
     };
   }
 
-  // ======================
-  // SECTOR FLOWS
-  // ======================
-  const grouped: Record<string, { total: number; count: number }> = {};
+  /* ====================== */
+  /* SECTOR FLOWS           */
+  /* ====================== */
+
+  const grouped: Record<
+    string,
+    {
+      total: number;
+      count: number;
+    }
+  > = {};
 
   coins.forEach((coin) => {
-    const sector = sectorMap[coin.symbol.toUpperCase()] || "OTHER";
+    const sector = getMarketSector(
+      coin.symbol
+    );
 
-    if (!grouped[sector]) grouped[sector] = { total: 0, count: 0 };
+    if (!grouped[sector]) {
+      grouped[sector] = {
+        total: 0,
+        count: 0,
+      };
+    }
 
-    grouped[sector].total += coin.change24h;
+    grouped[sector].total +=
+      coin.change24h;
+
     grouped[sector].count += 1;
   });
 
-  const flows = Object.entries(grouped).map(([name, d]) => ({
-  name,
-  avg: d.total / d.count,
-}));
+  const flows = Object.entries(
+    grouped
+  ).map(([name, data]) => ({
+    name,
+    avg:
+      data.total /
+      data.count,
+  }));
 
-  const values = flows.map((f) => f.avg);
+  const values = flows.map(
+    (flow) => flow.avg
+  );
 
   const avgFlow =
-    values.reduce((s, v) => s + v, 0) / (values.length || 1);
+    values.reduce(
+      (sum, value) =>
+        sum + value,
+      0
+    ) /
+    (values.length || 1);
+
+  /* ====================== */
+  /* BREADTH                 */
+  /* ====================== */
 
   const positiveBreadth =
-    (coins.filter((c) => c.change24h > 0).length / coins.length) * 100;
-
-  const negativeBreadth = 100 - positiveBreadth;
-
-  const volatility =
-    coins.reduce((s, c) => s + Math.abs(c.change24h), 0) / coins.length;
-
-  const participation =
-    (coins.filter((c) => Math.abs(c.change24h) > 3).length / coins.length) *
+    (coins.filter(
+      (coin) =>
+        coin.change24h > 0
+    ).length /
+      coins.length) *
     100;
 
-  // ======================
-  // REGIME
-  // ======================
-  let regime: MarketRegime = "CHOPPY";
+  const negativeBreadth =
+    100 -
+    positiveBreadth;
 
-  const dispersion = calculateDispersion(values);
+  /* ====================== */
+  /* VOLATILITY              */
+  /* ====================== */
 
-  if (avgFlow < -2 && negativeBreadth > 70) regime = "RISK_OFF";
-  else if (avgFlow > 2 && positiveBreadth > 65) regime = "RISK_ON";
-  else if (dispersion > 5) regime = "ROTATION";
+  const volatility =
+    coins.reduce(
+      (sum, coin) =>
+        sum +
+        Math.abs(
+          coin.change24h
+        ),
+      0
+    ) /
+    coins.length;
 
-  // ======================
-  // MOMENTUM
-  // ======================
-  const momentum: MarketEngineOutput["momentum"] =
-    avgFlow > 1.5 && positiveBreadth > 60
+  /* ====================== */
+  /* PARTICIPATION           */
+  /* ====================== */
+
+  const participation =
+    (coins.filter(
+      (coin) =>
+        Math.abs(
+          coin.change24h
+        ) > 3
+    ).length /
+      coins.length) *
+    100;
+
+  /* ====================== */
+  /* REGIME                  */
+  /* ====================== */
+
+  let regime: MarketRegime =
+    "CHOPPY";
+
+  const dispersion =
+    calculateDispersion(
+      values
+    );
+
+  if (
+    avgFlow < -2 &&
+    negativeBreadth > 70
+  ) {
+    regime = "RISK_OFF";
+  } else if (
+    avgFlow > 2 &&
+    positiveBreadth > 65
+  ) {
+    regime = "RISK_ON";
+  } else if (
+    dispersion > 5
+  ) {
+    regime = "ROTATION";
+  }
+
+  /* ====================== */
+  /* MOMENTUM                */
+  /* ====================== */
+
+  const momentum:
+    MarketEngineOutput["momentum"] =
+    avgFlow > 1.5 &&
+    positiveBreadth > 60
       ? "ACCELERATING"
-      : avgFlow < -1.5 && negativeBreadth > 60
+      : avgFlow < -1.5 &&
+        negativeBreadth > 60
       ? "DECELERATING"
       : "NEUTRAL";
 
-  // ======================
-  // LEADERS / LAGGARDS
-  // ======================
-  const sorted = [...coins].sort((a, b) => b.change24h - a.change24h);
+  /* ====================== */
+  /* LEADERS / LAGGARDS      */
+  /* ====================== */
 
-  const leaders = sorted.slice(0, 5);
-  const laggards = [...sorted].reverse().slice(0, 5);
+  const sorted = [
+    ...coins,
+  ].sort(
+    (a, b) =>
+      b.change24h -
+      a.change24h
+  );
 
-  // ======================
-  // DOMINANCE
-  // ======================
-  const totalCap = coins.reduce(
-  (s, c) => s + (c.marketCap ?? 0),
-  0
-) || 1;
+  const leaders =
+    sorted.slice(0, 5);
 
-  const btc = coins.find((c) => c.symbol === "BTC");
-  const eth = coins.find((c) => c.symbol === "ETH");
+  const laggards =
+    [...sorted]
+      .reverse()
+      .slice(0, 5);
 
-  const btcDominance = ((btc?.marketCap || 0) / totalCap) * 100;
-  const ethDominance = ((eth?.marketCap || 0) / totalCap) * 100;
-  const altStrength = Math.max(0, 100 - btcDominance - ethDominance);
+  /* ====================== */
+  /* DOMINANCE               */
+  /* ====================== */
 
-  // ======================
-  // SIGNALS (RAW ONLY)
-  // ======================
+  const totalCap =
+    coins.reduce(
+      (sum, coin) =>
+        sum +
+        (coin.marketCap ?? 0),
+      0
+    ) || 1;
+
+  const btc = coins.find(
+    (coin) =>
+      coin.symbol === "BTC"
+  );
+
+  const eth = coins.find(
+    (coin) =>
+      coin.symbol === "ETH"
+  );
+
+  const btcDominance =
+    ((btc?.marketCap || 0) /
+      totalCap) *
+    100;
+
+  const ethDominance =
+    ((eth?.marketCap || 0) /
+      totalCap) *
+    100;
+
+  const altStrength =
+    Math.max(
+      0,
+      100 -
+        btcDominance -
+        ethDominance
+    );
+
+  /* ====================== */
+  /* SIGNALS                 */
+  /* ====================== */
+
   const momentumStrength =
-    Math.min(100, Math.abs(avgFlow) * 20 + participation);
+    Math.min(
+      100,
+      Math.abs(avgFlow) *
+        20 +
+        participation
+    );
 
   const flowState =
-    participation > 60 && avgFlow > 1
+    participation > 60 &&
+    avgFlow > 1
       ? "ACCUMULATION"
-      : participation > 60 && avgFlow < -1
+      : participation > 60 &&
+        avgFlow < -1
       ? "DISTRIBUTION"
       : "NEUTRAL";
 
-  const sentiment: "BULLISH" | "BEARISH" | "NEUTRAL" =
+  const sentiment:
+    | "BULLISH"
+    | "BEARISH"
+    | "NEUTRAL" =
     positiveBreadth > 60
       ? "BULLISH"
       : negativeBreadth > 60
       ? "BEARISH"
       : "NEUTRAL";
 
-  // ======================
-  // SCORES
-  // ======================
-  const regimeConfidence = calculateRegimeConfidence({
-    participationScore: participation,
-    volatilityScore: calculateVolatilityScore(volatility),
-    breadthScore: positiveBreadth,
-    momentumScore: calculateMomentumScore(avgFlow),
-  });
+  /* ====================== */
+  /* SCORES                  */
+  /* ====================== */
 
-  const marketHealth = calculateMarketHealth({
-    momentumScore: calculateMomentumScore(avgFlow),
-    breadthScore: positiveBreadth,
-    participationScore: participation,
-    volatilityScore: calculateVolatilityScore(volatility),
-  });
+  const regimeConfidence =
+    calculateRegimeConfidence({
+      participationScore:
+        participation,
 
-  const volatilityState = classifyVolatility(volatility);
-  const breadthState = classifyBreadth(positiveBreadth);
-  const stability = classifyStability(volatility, negativeBreadth);
+      volatilityScore:
+        calculateVolatilityScore(
+          volatility
+        ),
+
+      breadthScore:
+        positiveBreadth,
+
+      momentumScore:
+        calculateMomentumScore(
+          avgFlow
+        ),
+    });
+
+  const marketHealth =
+    calculateMarketHealth({
+      momentumScore:
+        calculateMomentumScore(
+          avgFlow
+        ),
+
+      breadthScore:
+        positiveBreadth,
+
+      participationScore:
+        participation,
+
+      volatilityScore:
+        calculateVolatilityScore(
+          volatility
+        ),
+    });
+
+  const volatilityState =
+    classifyVolatility(
+      volatility
+    );
+
+  const breadthState =
+    classifyBreadth(
+      positiveBreadth
+    );
+
+  const stability =
+    classifyStability(
+      volatility,
+      negativeBreadth
+    );
+
+  /* ====================== */
+  /* CANONICAL SECTOR ENGINE */
+  /* ====================== */
+
+  const sectorRotation =
+  buildSectorRotation(
+    coins,
+    previousSectorState
+  );
+
+  /* ====================== */
+  /* RESULT                  */
+  /* ====================== */
 
   return {
     flows,
-    avgFlow: Number(avgFlow.toFixed(2)),
-    positiveBreadth: Number(positiveBreadth.toFixed(1)),
-    negativeBreadth: Number(negativeBreadth.toFixed(1)),
-    volatility: Number(volatility.toFixed(2)),
-    participation: Number(participation.toFixed(1)),
+
+    avgFlow: Number(
+      avgFlow.toFixed(2)
+    ),
+
+    positiveBreadth:
+      Number(
+        positiveBreadth.toFixed(
+          1
+        )
+      ),
+
+    negativeBreadth:
+      Number(
+        negativeBreadth.toFixed(
+          1
+        )
+      ),
+
+    volatility:
+      Number(
+        volatility.toFixed(2)
+      ),
+
+    participation:
+      Number(
+        participation.toFixed(
+          1
+        )
+      ),
 
     regime,
+
     momentum,
 
     leaders,
     laggards,
 
-    btcDominance: Number(btcDominance.toFixed(1)),
-    ethDominance: Number(ethDominance.toFixed(1)),
-    altStrength: Number(altStrength.toFixed(1)),
+    btcDominance:
+      Number(
+        btcDominance.toFixed(
+          1
+        )
+      ),
 
-    regimeConfidence: Number(regimeConfidence.toFixed(1)),
-    marketHealth: Number(marketHealth.toFixed(1)),
+    ethDominance:
+      Number(
+        ethDominance.toFixed(
+          1
+        )
+      ),
+
+    altStrength:
+      Number(
+        altStrength.toFixed(
+          1
+        )
+      ),
+
+    regimeConfidence:
+      Number(
+        regimeConfidence.toFixed(
+          1
+        )
+      ),
+
+    marketHealth:
+      Number(
+        marketHealth.toFixed(
+          1
+        )
+      ),
 
     volatilityState,
     breadthState,
@@ -247,17 +566,28 @@ export function buildMarketEngine(coins: Coin[]): MarketEngineOutput {
 
     signals: {
       momentum: {
-        direction: momentum,
-        strength: momentumStrength,
+        direction:
+          momentum,
+
+        strength:
+          momentumStrength,
       },
+
       flow: {
-        state: flowState,
+        state:
+          flowState,
+
         score:
-          flowState === "ACCUMULATION"
+          flowState ===
+          "ACCUMULATION"
             ? participation
-            : 100 - participation,
+            : 100 -
+              participation,
       },
+
       sentiment,
     },
+
+    sectorRotation,
   };
 }

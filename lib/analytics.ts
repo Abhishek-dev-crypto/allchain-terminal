@@ -8,7 +8,15 @@ export const trackEvent = (
   eventName: string,
   params?: Record<string, any>
 ) => {
-  if (typeof window !== "undefined" && window.gtag) {
+  // Never send analytics from development/local environments
+  if (
+    process.env.NODE_ENV !== "production" ||
+    typeof window === "undefined"
+  ) {
+    return;
+  }
+
+  if (window.gtag) {
     window.gtag("event", eventName, params);
   }
 };

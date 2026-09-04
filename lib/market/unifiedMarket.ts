@@ -1,47 +1,103 @@
-import { getCache, setCache } from "@/lib/marketCache";
 import { getCoinGeckoId } from "@/lib/coingeckoSymbolMap";
+import { cacheOrchestrator } from "./cache/cacheOrchestrator";
 
-export async function getUnifiedMarket(symbol: string) {
-  const cacheKey = `umdl:${symbol}`;
+type UnifiedMarketData = {
+  symbol: string;
+  price: number | null;
+  change24h: number | null;
+  high24h: number | null;
+  low24h: number | null;
+  volume24h: number | null;
+  source: "coingecko";
+  timestamp: number;
+};
 
-  // 1. CACHE FIRST
-  const cached = await getCache(cacheKey);
-  if (cached) return cached;
+export async function getUnifiedMarket(
+  symbol: string
+): Promise<UnifiedMarketData> {
+  const normalizedSymbol = symbol.toUpperCase();
 
-  const coinId = getCoinGeckoId(symbol);
+  const cacheKey = `umdl:${normalizedSymbol}`;
 
-  if (!coinId) {
-    throw new Error(`Unsupported symbol: ${symbol}`);
-  }
+  return cacheOrchestrator<UnifiedMarketData>({
+    key: cacheKey,
 
-  // 2. COINGECKO FETCH
-  const res = await fetch(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`
-  );
+    /*
+     * Unified market data is currently sourced from CoinGecko.
+     *
+     * We intentionally use the snapshot cache type here because
+     * this is a point-in-time market snapshot rather than a
+     * candle series.
+     */
+    type: "snapshot",
 
-  if (!res.ok) {
-    throw new Error(`CoinGecko HTTP ${res.status}`);
-  }
+    fetcher: async () => {
+      const coinId =
+        getCoinGeckoId(normalizedSymbol);
 
-  const data = await res.json();
-  const coin = data?.[coinId];
+      if (!coinId) {
+        throw new Error(
+          `Unsupported symbol: ${normalizedSymbol}`
+        );
+      }
 
-  if (!coin) throw new Error("Invalid CoinGecko response");
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`
+      );
 
-  const result = {
-    symbol,
-    price: coin.usd ?? null,
-    change24h: coin.usd_24h_change ?? null,
-    high24h: null,
-    low24h: null,
-    volume24h: null,
+      if (!res.ok) {
+        throw new Error(
+          `CoinGecko HTTP ${res.status}`
+        );
+      }
 
-    source: "coingecko",
-    timestamp: Date.now(),
-  };
+      const data = await res.json();
 
-  // 3. CACHE
-  await setCache(cacheKey, result, 10);
+      const coin = data?.[coinId];
 
-  return result;
+      if (!coin) {
+        throw new Error(
+          "Invalid CoinGecko response"
+        );
+      }
+
+      return {
+        symbol: normalizedSymbol,
+
+        price:
+          typeof coin.usd === "number"
+            ? coin.usd
+            : null,
+
+        change24h:
+          typeof coin.usd_24h_change === "number"
+            ? coin.usd_24h_change
+            : null,
+
+        high24h: null,
+        low24h: null,
+        volume24h: null,
+
+        source: "coingecko",
+
+        timestamp: Date.now(),
+      };
+    },
+
+    /*
+     * Keep the context deterministic here.
+     *
+     * The adaptive TTL system is primarily driven by
+     * candle-derived market context. Unified market data
+     * does not currently contain enough information to
+     * calculate that context safely.
+     */
+    getContext: () => ({
+      symbol: normalizedSymbol,
+      volatility: 3,
+      momentum: 0,
+      regime: "TRENDING",
+      timeframe: undefined,
+    }),
+  });
 }

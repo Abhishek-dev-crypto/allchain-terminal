@@ -1,68 +1,81 @@
-import type { MarketSnapshot } from "./useMarketSnapshot";
+import "server-only";
+
+import type { MarketSnapshot } from "./buildMarketSnapshot";
+import {
+  buildHistoricalMomentum,
+  type HistoricalMomentumResult,
+} from "./buildHistoricalMomentum";
 
 export type TimelineState =
-  | "WEAK"
+  | "WEAKENING"
   | "NEUTRAL"
   | "EXPANDING"
   | "ACCELERATING"
-  | "STRONG TREND";
+  | "STRONG TREND"
+  | "INSUFFICIENT HISTORY";
 
 export type TimelineNode = {
-  timeframe: string;
+  timeframe: "15M" | "1H" | "4H" | "24H";
   state: TimelineState;
-  confidence: number;
+  confidence: number | null;
+  change: number | null;
+  available: boolean;
+  historicalTimestamp: number | null;
 };
 
-export function buildMomentumTimeline(
-  snapshot: MarketSnapshot
-): TimelineNode[] {
-  const {
-    breadth,
-    momentum,
-    flow,
-  } = snapshot;
+function mapState(
+  result: HistoricalMomentumResult
+): TimelineState {
+  if (!result.available) {
+    return "INSUFFICIENT HISTORY";
+  }
 
-  const score =
-    momentum.strength +
-    breadth.greenPercent / 20 +
-    flow.score / 25;
+  switch (result.state) {
+    case "ACCELERATING":
+      return "ACCELERATING";
 
-  const buildState = (
-    modifier: number
-  ): TimelineState => {
-    const total = score + modifier;
+    case "DECELERATING":
+      return "WEAKENING";
 
-    if (total >= 15) return "STRONG TREND";
-    if (total >= 12) return "ACCELERATING";
-    if (total >= 9) return "EXPANDING";
-    if (total >= 6) return "NEUTRAL";
+    case "NEUTRAL":
+    default:
+      return "NEUTRAL";
+  }
+}
 
-    return "WEAK";
-  };
+export async function buildMomentumTimeline(
+  snapshot: MarketSnapshot,
+  currentTimestamp: number = Date.now()
+): Promise<TimelineNode[]> {
+  const timeframes = [
+    "15M",
+    "1H",
+    "4H",
+    "24H",
+  ] as const;
 
-  return [
-    {
-      timeframe: "15M",
-      state: buildState(-3),
-      confidence: 58,
-    },
+  const results = await Promise.all(
+    timeframes.map((timeframe) =>
+      buildHistoricalMomentum(
+        snapshot,
+        timeframe,
+        currentTimestamp
+      )
+    )
+  );
 
-    {
-      timeframe: "1H",
-      state: buildState(-1),
-      confidence: 66,
-    },
+  return results.map((result) => ({
+    timeframe: result.timeframe,
 
-    {
-      timeframe: "4H",
-      state: buildState(1),
-      confidence: 78,
-    },
+    state: mapState(result),
 
-    {
-      timeframe: "24H",
-      state: buildState(3),
-      confidence: 86,
-    },
-  ];
+    confidence: result.confidence,
+
+    change: result.change,
+
+    available: result.available,
+
+    historicalTimestamp:
+      result.timestamp,
+  }));
 }

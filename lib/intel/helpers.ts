@@ -3,14 +3,23 @@
 // ===============================
 // CLAMP UTILITY
 // ===============================
-export function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
+export function clamp(
+  value: number,
+  min: number,
+  max: number
+) {
+  return Math.max(
+    min,
+    Math.min(max, value)
+  );
 }
 
 // ===============================
 // VOLATILITY CLASSIFICATION
 // ===============================
-export function classifyVolatility(volatility: number) {
+export function classifyVolatility(
+  volatility: number
+) {
   if (volatility < 2) return "LOW";
   if (volatility < 5) return "NORMAL";
   if (volatility < 8) return "ELEVATED";
@@ -20,9 +29,15 @@ export function classifyVolatility(volatility: number) {
 // ===============================
 // BREADTH CLASSIFICATION
 // ===============================
-export function classifyBreadth(positiveBreadth: number) {
-  if (positiveBreadth > 70) return "STRONG";
-  if (positiveBreadth < 35) return "WEAK";
+export function classifyBreadth(
+  positiveBreadth: number
+) {
+  if (positiveBreadth > 70)
+    return "STRONG";
+
+  if (positiveBreadth < 35)
+    return "WEAK";
+
   return "NARROW";
 }
 
@@ -33,7 +48,10 @@ export function classifyStability(
   volatility: number,
   negativeBreadth: number
 ) {
-  if (volatility > 7 && negativeBreadth > 70) {
+  if (
+    volatility > 7 &&
+    negativeBreadth > 70
+  ) {
     return "UNSTABLE";
   }
 
@@ -47,7 +65,9 @@ export function classifyStability(
 // ===============================
 // DISPERSION CALCULATION
 // ===============================
-export function calculateDispersion(values: number[]) {
+export function calculateDispersion(
+  values: number[]
+) {
   if (!values.length) return 0;
 
   const max = Math.max(...values);
@@ -57,15 +77,27 @@ export function calculateDispersion(values: number[]) {
 }
 
 // ===============================
-// MOMENTUM SCORE HELPERS (OPTIONAL BUT CLEAN)
+// MOMENTUM SCORE
 // ===============================
-export function calculateMomentumScore(avgFlow: number) {
-  return clamp(avgFlow * 20 + 50, 0, 100);
+export function calculateMomentumScore(
+  avgFlow: number
+) {
+  return clamp(
+    avgFlow * 20 + 50,
+    0,
+    100
+  );
 }
 
 // ===============================
-// VOLATILITY SCORE HELPER
+// VOLATILITY SCORE
 // ===============================
-export function calculateVolatilityScore(volatility: number) {
-  return clamp(100 - volatility * 10, 0, 100);
+export function calculateVolatilityScore(
+  volatility: number
+) {
+  return clamp(
+    100 - volatility * 10,
+    0,
+    100
+  );
 }

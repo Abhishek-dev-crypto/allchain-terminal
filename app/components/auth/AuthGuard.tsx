@@ -20,6 +20,11 @@ export default function AuthGuard({
       setUser(currentUser);
       setLoading(false);
 
+      if (currentUser) {
+    console.log("ALLCHAIN DEVELOPER UID:", currentUser.uid);
+    console.log("ALLCHAIN DEVELOPER EMAIL:", currentUser.email);
+  }
+
       if (!currentUser) {
         router.replace("/");
       }

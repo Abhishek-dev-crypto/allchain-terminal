@@ -1,15 +1,89 @@
 import type { MarketContext } from "./marketContext";
 
-type CacheType = "ticker" | "candles" | "snapshot";
+type CacheType =
+  | "ticker"
+  | "candles"
+  | "snapshot";
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+/* =========================================================
+   LIMITS
+========================================================= */
+
+const MIN_TTL = 5;
+const MAX_TTL = 600;
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function clamp(
+  value: number,
+  min: number,
+  max: number
+): number {
+  return Math.max(
+    min,
+    Math.min(max, value)
+  );
 }
+
+/* =========================================================
+   BASE TTL
+========================================================= */
+
+function getBaseTTL(
+  type: CacheType,
+  timeframe?: string
+): number {
+
+  switch (type) {
+    case "ticker":
+      return 10;
+
+    case "snapshot":
+      return 15;
+
+    case "candles":
+      switch (timeframe) {
+        case "1m":
+          return 10;
+
+        case "5m":
+          return 15;
+
+        case "15m":
+          return 30;
+
+        case "30m":
+          return 45;
+
+        case "1h":
+          return 60;
+
+        case "4h":
+          return 180;
+
+        case "1d":
+          return 600;
+
+        default:
+          return 30;
+      }
+
+    default:
+      return 30;
+  }
+}
+
+/* =========================================================
+   ADAPTIVE TTL
+========================================================= */
 
 export function getAdaptiveTTL(
   type: CacheType,
   ctx: MarketContext
 ): number {
+
   const {
     volatility,
     momentum,
@@ -17,85 +91,73 @@ export function getAdaptiveTTL(
     timeframe,
   } = ctx;
 
-  // -----------------------
-  // Base TTL
-  // -----------------------
+  let ttl = getBaseTTL(
+    type,
+    timeframe
+  );
 
-  let ttl = 10;
+  /* -------------------------------------------------------
+     VOLATILITY
 
-  if (type === "ticker") {
-    ttl = 6;
+     Higher volatility → refresh sooner.
+     Lower volatility → cache longer.
+  ------------------------------------------------------- */
+
+  if (volatility >= 8) {
+    ttl *= 0.60;
+  } else if (volatility >= 6) {
+    ttl *= 0.75;
+  } else if (volatility < 1) {
+    ttl *= 1.50;
+  } else if (volatility < 2) {
+    ttl *= 1.25;
   }
 
-  if (type === "snapshot") {
-    ttl = 8;
+  /* -------------------------------------------------------
+     MOMENTUM
+
+     Strong directional movement deserves
+     somewhat faster refreshes.
+  ------------------------------------------------------- */
+
+  const absoluteMomentum =
+    Math.abs(momentum);
+
+  if (absoluteMomentum >= 8) {
+    ttl *= 0.70;
+  } else if (absoluteMomentum >= 5) {
+    ttl *= 0.80;
   }
 
-  if (type === "candles") {
-    switch (timeframe) {
-      case "1m":
-        ttl = 5;
-        break;
+  /* -------------------------------------------------------
+     MARKET REGIME
+  ------------------------------------------------------- */
 
-      case "5m":
-        ttl = 10;
-        break;
+  switch (regime) {
 
-      case "15m":
-        ttl = 20;
-        break;
+    case "BREAKOUT":
+      ttl *= 0.70;
+      break;
 
-      case "30m":
-        ttl = 30;
-        break;
+    case "TRENDING":
+      ttl *= 0.90;
+      break;
 
-      case "1h":
-        ttl = 60;
-        break;
-
-      case "4h":
-        ttl = 180;
-        break;
-
-      case "1d":
-        ttl = 600;
-        break;
-
-      default:
-        ttl = 30;
-    }
+    case "RANGING":
+      ttl *= 1.25;
+      break;
   }
 
-  // -----------------------
-  // Volatility
-  // -----------------------
+  /* -------------------------------------------------------
+     FINAL SAFETY BOUNDS
 
-  if (volatility > 6)
-    ttl *= 0.5;
-
-  else if (volatility < 2)
-    ttl *= 1.5;
-
-  // -----------------------
-  // Momentum
-  // -----------------------
-
-  if (Math.abs(momentum) > 5)
-    ttl *= 0.7;
-
-  // -----------------------
-  // Regime
-  // -----------------------
-
-  if (regime === "BREAKOUT")
-    ttl *= 0.5;
-
-  if (regime === "RANGING")
-    ttl *= 1.5;
+     Never allow adaptive logic to create
+     extremely aggressive upstream polling.
+  ------------------------------------------------------- */
 
   return clamp(
     Math.round(ttl),
-    3,
-    600
+    MIN_TTL,
+    MAX_TTL
   );
 }

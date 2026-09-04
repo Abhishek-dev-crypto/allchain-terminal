@@ -54,6 +54,7 @@ type Event = {
 };
 
 type PremiumRequest = {
+  id?: string;
   uid?: string;
   email?: string;
   name?: string;
@@ -83,6 +84,45 @@ const [selectedUser, setSelectedUser] = useState<string | null>(null);
   useState(true);
 
   const ADMIN_EMAIL = 'abhiii31@gmail.com';
+
+    const approvePremium = async (
+    uid: string,
+    requestId: string
+  ) => {
+    try {
+      if (!currentUser) {
+        alert("You are not authenticated.");
+        return;
+      }
+
+      const idToken = await currentUser.getIdToken();
+
+      const response = await fetch("/api/admin/premium", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          uid,
+          requestId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Failed to approve Premium"
+        );
+      }
+
+      alert("Premium access granted successfully.");
+    } catch (error) {
+      console.error("Premium approval failed:", error);
+      alert("Failed to approve Premium access.");
+    }
+  };
 
   useEffect(() => {
   const unsub = onAuthStateChanged(auth, (user) => {
@@ -172,7 +212,10 @@ useEffect(() => {
     collection(db, "premium_requests"),
     (snap) => {
       setPremiumRequests(
-        snap.docs.map((d) => d.data() as PremiumRequest)
+        snap.docs.map((d) => ({
+  id: d.id,
+  ...d.data(),
+})) as PremiumRequest[]
       );
     }
   );
@@ -725,9 +768,24 @@ if (currentUser?.email !== ADMIN_EMAIL) {
               </div>
             </div>
 
-            <div className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-300">
-              {req.status || "pending"}
-            </div>
+            <div className="flex items-center gap-2">
+  <div className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-300">
+    {req.status || "pending"}
+  </div>
+
+  {(!req.status || req.status === "pending") &&
+    req.uid &&
+    req.id && (
+      <button
+        onClick={() =>
+          approvePremium(req.uid!, req.id!)
+        }
+        className="text-xs px-3 py-1 rounded-md bg-green-500/20 text-green-300 hover:bg-green-500/30 transition"
+      >
+        Approve
+      </button>
+    )}
+</div>
 
           </div>
 

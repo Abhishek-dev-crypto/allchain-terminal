@@ -155,12 +155,12 @@ export function buildWhaleInsights(
         Math.abs(a.change24h)
     )[0];
 
-  const pressureZone =
-    strongest
-      ? strongest.change24h >= 0
-        ? `${strongest.symbol} accumulation`
-        : `${strongest.symbol} distribution`
-      : "Neutral flow";
+ const pressureZone =
+  strongest
+    ? strongest.change24h >= 0
+      ? `${strongest.symbol} — strongest buying pressure`
+      : `${strongest.symbol} — strongest selling pressure`
+    : "Neutral market pressure";
 
   /**
    * 🧠 INTERPRETATION

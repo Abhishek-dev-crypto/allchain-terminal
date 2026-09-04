@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 
@@ -8,7 +7,12 @@ const nextConfig = {
   },
 
   images: {
-    domains: ["coin-images.coingecko.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "coin-images.coingecko.com",
+      },
+    ],
     unoptimized: true,
   },
 
@@ -34,8 +38,7 @@ const nextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value:
-              "X-Requested-With, Content-Type, Authorization",
+            value: "X-Requested-With, Content-Type, Authorization",
           },
         ],
       },

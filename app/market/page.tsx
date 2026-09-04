@@ -1,16 +1,33 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 
+/* ================================================== */
 /* PROVIDERS */
-import { MarketProvider, useMarket } from "@/lib/providers/MarketProvider";
-import { TerminalProvider, useTerminal } from "@/lib/terminal/TerminalContext";
+/* ================================================== */
 
+import {
+  MarketProvider,
+  useMarket,
+} from "@/lib/providers/MarketProvider";
+
+import {
+  TerminalProvider,
+  useTerminal,
+} from "@/lib/terminal/TerminalContext";
+
+/* ================================================== */
 /* UI */
+/* ================================================== */
+
 import LeftIntelligencePanel from "../components/terminal/LeftIntelligencePanel";
 import PremiumRail from "../components/terminal/PremiumRail";
 
+/* ================================================== */
 /* WORKSPACES */
+/* ================================================== */
+
 import OverviewWorkspace from "../components/terminal/workspaces/OverviewWorkspace";
 import NarrativeWorkspace from "../components/terminal/workspaces/NarrativeWorkspace";
 import SentimentWorkspace from "../components/terminal/workspaces/SentimentWorkspace";
@@ -22,218 +39,488 @@ import RegimeWorkspace from "../components/terminal/workspaces/RegimeWorkspace";
 import WhaleWorkspace from "../components/terminal/workspaces/WhaleWorkspace";
 import AlertsWorkspace from "../components/terminal/workspaces/AlertsWorkspace";
 
-import { LENSES } from "@/lib/terminal/lenses";
+/* ================================================== */
+/* SHARED */
+/* ================================================== */
+
 import TerminalGuide from "../components/terminal/shared/TerminalGuide";
 import AuthGuard from "../components/auth/AuthGuard";
 
-/* ---------------- STATUS ---------------- */
-function TerminalStatus() {
-  const { streamStatus, lastUpdated } = useMarket();
-  const [mounted, setMounted] = useState(false);
+/* ================================================== */
+/* PREMIUM */
+/* ================================================== */
 
- 
+import AlphaSignals from "../components/terminal/premium/AlphaSignals";
+import PredictiveAI from "../components/terminal/premium/PredictiveAI";
+import SmartMoney from "../components/terminal/premium/SmartMoney";
+import LiquidityHeat from "../components/terminal/premium/LiquidityHeat";
+import WhaleIntent from "../components/terminal/premium/WhaleIntent";
+import RegimeForecast from "../components/terminal/premium/RegimeForecast";
+import MarketRegime from "../components/terminal/premium/MarketRegime";
+import EdgeOpportunities from "../components/terminal/premium/EdgeOpportunities";
 
-  useEffect(() => setMounted(true), []);
+import { usePremiumEntitlement } from "@/lib/premium/usePremiumEntitlement";
 
-  return (
-    <div className="flex items-center gap-4 text-xs">
-      <div
-        className={`h-2 w-2 rounded-full ${
-          streamStatus === "CONNECTED"
-            ? "bg-emerald-400"
-            : streamStatus === "SYNCING"
-            ? "bg-yellow-400"
-            : streamStatus === "DEGRADED"
-            ? "bg-orange-400"
-            : "bg-red-400"
-        }`}
-      />
+import { trackEvent } from "@/lib/analytics";
 
-      <div className="font-medium text-white/70">{streamStatus}</div>
+/* ================================================== */
+/* MAIN TERMINAL */
+/* ================================================== */
 
-      <div className="text-white/30">
-        {mounted ? new Date(lastUpdated).toLocaleTimeString() : "--:--:--"}
-      </div>
-    </div>
-  );
-}
-
-/* ---------------- MAIN TERMINAL ---------------- */
 function MarketTerminal() {
-  const { activeLens } = useTerminal();
+  /* ================================================== */
+  /* MARKET STATE */
+  /* ================================================== */
 
-  const [premiumOpen, setPremiumOpen] = useState(false);
+  const {
+    streamStatus,
+    lastUpdated,
+  } = useMarket();
 
-  const [guideOpen, setGuideOpen] = useState(false);
+  /* ================================================== */
+  /* TERMINAL STATE */
+  /* ================================================== */
 
-  const [lensOverlayOpen, setLensOverlayOpen] = useState(false);
+  const {
+    activeLens,
+  } = useTerminal();
+
+  /* ================================================== */
+  /* PREMIUM STATE */
+  /* ================================================== */
+
+  const {
+    isPremium,
+    premiumLoading,
+  } = usePremiumEntitlement();
+
+  /* ================================================== */
+  /* UI STATE */
+  /* ================================================== */
+
+  const [mounted, setMounted] =
+    useState(false);
+
+  const [guideOpen, setGuideOpen] =
+    useState(false);
+
+  const [lensOverlayOpen, setLensOverlayOpen] =
+    useState(false);
+
+  /* ================================================== */
+  /* MOUNT */
+  /* ================================================== */
 
   useEffect(() => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "market_loaded");
-  }
+    setMounted(true);
+  }, []);
+
+  /* ================================================== */
+  /* ANALYTICS */
+  /* ================================================== */
+
+  useEffect(() => {
+  trackEvent("market_loaded");
 }, []);
 
   return (
     <div className="relative min-h-screen bg-[#0B1220] text-white">
 
-      {/* TOP BAR */}
-      <div className="flex items-center justify-between border-b border-white/10 px-6 py-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold">Market Terminal</h1>
-            <div className="h-1 w-1 rounded-full bg-white/20" />
-            <div className="text-[10px] uppercase tracking-[0.25em] text-cyan-300">
-              Live Intelligence
-            </div>
+      {/* ================================================== */}
+      {/* COMPACT TOP BAR */}
+      {/* ================================================== */}
+
+      <div className="flex h-9 items-center justify-between border-b border-white/10 px-3">
+
+        {/* ================================================== */}
+        {/* LEFT — TERMINAL TITLE */}
+        {/* ================================================== */}
+
+        <div className="flex min-w-0 items-center gap-2.5">
+
+          <h1 className="shrink-0 text-sm font-semibold text-white">
+            Market Terminal
+          </h1>
+
+          <div className="h-1 w-1 shrink-0 rounded-full bg-white/20" />
+
+          <div className="truncate text-[8px] uppercase tracking-[0.2em] text-cyan-300">
+            Live Intelligence
           </div>
 
-          <TerminalStatus />
         </div>
+
+        {/* ================================================== */}
+        {/* RIGHT — STATUS */}
+        {/* ================================================== */}
+
+        <div className="flex shrink-0 items-center gap-3">
+
+          {/* ================================================== */}
+          {/* CONNECTION STATUS */}
+          {/* ================================================== */}
+
+          <div className="flex items-center gap-1.5">
+
+            <div
+              className={`
+                h-1.5
+                w-1.5
+                rounded-full
+                ${
+                  streamStatus === "CONNECTED"
+                    ? "bg-emerald-400"
+                    : streamStatus === "SYNCING"
+                    ? "bg-yellow-400"
+                    : streamStatus === "DEGRADED"
+                    ? "bg-orange-400"
+                    : "bg-red-400"
+                }
+              `}
+            />
+
+            <div className="text-[9px] font-medium text-white/55">
+              {streamStatus}
+            </div>
+
+          </div>
+
+          {/* ================================================== */}
+          {/* LAST UPDATED */}
+          {/* ================================================== */}
+
+          <div className="hidden text-[9px] text-white/25 sm:block">
+            {mounted
+              ? new Date(
+                  lastUpdated
+                ).toLocaleTimeString()
+              : "--:--:--"}
+          </div>
+
+          {/* ================================================== */}
+          {/* GUIDE */}
+          {/* ================================================== */}
+
+          <button
+            type="button"
+            onClick={() =>
+              setGuideOpen(true)
+            }
+            title="Terminal Guide"
+            aria-label="Terminal Guide"
+            className="
+              flex
+              h-6
+              w-6
+              items-center
+              justify-center
+              rounded-md
+              border
+              border-cyan-500/20
+              bg-cyan-500/5
+              text-[10px]
+              text-cyan-300
+              transition-all
+              hover:bg-cyan-500/10
+            "
+          >
+            ⓘ
+          </button>
+
+        </div>
+
+      </div>
+
+      {/* ================================================== */}
+      {/* TERMINAL GUIDE */}
+      {/* ================================================== */}
+
+      {guideOpen && (
+        <TerminalGuide
+          onClose={() =>
+            setGuideOpen(false)
+          }
+        />
+      )}
+
+      {/* ================================================== */}
+      {/* MOBILE INTELLIGENCE STRIP */}
+      {/* ================================================== */}
+
+      <div className="absolute left-0 top-9 z-40 xl:hidden">
 
         <button
-    onClick={() => setGuideOpen(true)}
-    className="
-      rounded-lg
-      border border-cyan-500/20
-      bg-cyan-500/5
-      px-3 py-2
-      text-xs
-      text-cyan-300
-      hover:bg-cyan-500/10
-    "
-  >
-    ⓘ Guide
-  </button>
+          type="button"
+          onClick={() =>
+            setLensOverlayOpen(true)
+          }
+          aria-label="Open Intelligence Lenses"
+          className="
+            flex
+            flex-col
+            border-r
+            border-white/10
+            bg-[#0B1220]
+            shadow-xl
+          "
+        >
+
+          {[
+            "O",
+            "N",
+            "S",
+            "M",
+            "F",
+            "R",
+            "H",
+            "W",
+            "A",
+          ].map((letter) => (
+            <span
+              key={letter}
+              className="
+                flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                border-b
+                border-white/5
+                text-[10px]
+                text-white/60
+              "
+            >
+              {letter}
+            </span>
+          ))}
+
+        </button>
 
       </div>
 
-       
-
-  {guideOpen && (
-  <TerminalGuide
-    onClose={() => setGuideOpen(false)}
-  />
-)}
-
-
-      {/* MOBILE CONTROL BAR */}
-      {/* MOBILE INTELLIGENCE STRIP */}
-<div className="xl:hidden absolute left-0 top-[80px] z-40">
-
-  <button
-    onClick={() => setLensOverlayOpen(true)}
-    className="
-      flex
-      flex-col
-      bg-[#0B1220]
-      border-r
-      border-white/10
-      shadow-xl
-    "
-  >
-    {[
-      "O",
-      "N",
-      "S",
-      "M",
-      "F",
-      "R",
-      "H",
-      "W",
-      "A",
-    ].map((letter) => (
-      <span
-        key={letter}
-        className="
-          w-10
-          h-10
-          flex
-          items-center
-          justify-center
-          text-xs
-          text-white/70
-          border-b
-          border-white/5
-        "
-      >
-        {letter}
-      </span>
-    ))}
-  </button>
-
-</div>
-
-      {/* GRID (DESKTOP ONLY LAYOUT LOGIC STAYS SAME) */}
-      <div className="grid grid-cols-1 gap-4 p-4 xl:grid-cols-12">
-
-        {/* LEFT PANEL (desktop only) */}
-        <div className="hidden xl:block xl:col-span-2">
-          <LeftIntelligencePanel />
-        </div>
-
-        {/* WORKSPACE */}
-        <div className="xl:col-span-7 space-y-4 pl-12 xl:pl-0">
-          {activeLens === "overview" && <OverviewWorkspace />}
-          {activeLens === "narrative" && <NarrativeWorkspace />}
-          {activeLens === "sentiment" && <SentimentWorkspace />}
-          {activeLens === "momentum" && <MomentumWorkspace />}
-          {activeLens === "flows" && <FlowWorkspace />}
-          {activeLens === "rotation" && <RotationWorkspace />}
-          {activeLens === "heatmap" && <HeatmapWorkspace />}
-          {activeLens === "regime" && <RegimeWorkspace />}
-          {activeLens === "whales" && <WhaleWorkspace />}
-          {activeLens === "alerts" && <AlertsWorkspace />}
-        </div>
-
-        {/* PREMIUM RAIL (desktop only) */}
-        <div className="col-span-1 xl:col-span-3">
-          <div className="h-full overflow-y-auto max-w-[300px] xl:max-w-none ml-auto">
-            <PremiumRail />
-          </div>
-        </div>
-      </div>
-      
-      
-      {/* MOBILE LENS OVERLAY */}
-      {lensOverlayOpen && (
-        <div className="absolute inset-0 z-50 bg-black/70 xl:hidden">
+      {/* ================================================== */}
+      {/* MAIN GRID */}
+      {/* ================================================== */}
 
       <div
         className="
-          absolute
-          left-0
-          top-[72px]
-          bottom-0
-          w-[300px]
-          bg-[#0B1220]
-          border-r
-          border-white/10
-          overflow-y-auto">
-          <LeftIntelligencePanel
-          onLensSelect={() => setLensOverlayOpen(false)}/>
+          grid
+          grid-cols-1
+          gap-2
+          p-2
+          xl:grid-cols-12
+        "
+      >
+
+        {/* ================================================== */}
+        {/* LEFT — INTELLIGENCE NAVIGATION */}
+        {/* ================================================== */}
+
+        <div className="hidden xl:block xl:col-span-2">
+
+          <LeftIntelligencePanel />
+
+        </div>
+
+        {/* ================================================== */}
+        {/* CENTER — MAIN WORKSPACE */}
+        {/* ================================================== */}
+
+        <div
+          className="
+            min-w-0
+            space-y-2
+            pl-11
+            xl:col-span-8
+            xl:pl-0
+          "
+        >
+
+          {/* ================================================== */}
+          {/* CORE INTELLIGENCE LENSES */}
+          {/* ================================================== */}
+
+          {activeLens === "overview" && (
+            <OverviewWorkspace />
+          )}
+
+          {activeLens === "narrative" && (
+            <NarrativeWorkspace />
+          )}
+
+          {activeLens === "sentiment" && (
+            <SentimentWorkspace />
+          )}
+
+          {activeLens === "momentum" && (
+            <MomentumWorkspace />
+          )}
+
+          {activeLens === "flows" && (
+            <FlowWorkspace />
+          )}
+
+          {activeLens === "rotation" && (
+            <RotationWorkspace />
+          )}
+
+          {activeLens === "heatmap" && (
+            <HeatmapWorkspace />
+          )}
+
+          {activeLens === "regime" && (
+            <RegimeWorkspace />
+          )}
+
+          {activeLens === "whales" && (
+            <WhaleWorkspace />
+          )}
+
+          {activeLens === "alerts" && (
+            <AlertsWorkspace />
+          )}
+
+          {/* ================================================== */}
+          {/* PREMIUM INTELLIGENCE */}
+          {/* ================================================== */}
+
+          {activeLens === "alpha_signals" && (
+            <AlphaSignals />
+          )}
+
+          {activeLens === "predictive_ai" && (
+            <PredictiveAI />
+          )}
+
+          {activeLens === "smart_money" && (
+            <SmartMoney />
+          )}
+
+          {activeLens === "liquidity_heat" && (
+            <LiquidityHeat />
+          )}
+
+          {activeLens === "whale_intent" && (
+            <WhaleIntent />
+          )}
+
+          {activeLens === "market_regime" && (
+            <MarketRegime />
+          )}
+
+          {activeLens === "regime_forecast" && (
+            <RegimeForecast />
+          )}
+
+          {activeLens === "edge_opportunities" && (
+            <EdgeOpportunities />
+          )}
+
+        </div>
+
+        {/* ================================================== */}
+        {/* RIGHT — AI COMMAND LAYER */}
+        {/* ================================================== */}
+
+        <div className="hidden xl:block xl:col-span-2">
+
+          <div
+            className="
+              ml-auto
+              h-full
+              max-w-[260px]
+              overflow-y-auto
+            "
+          >
+
+            <PremiumRail
+              isPremium={isPremium}
+              premiumLoading={
+                premiumLoading
+              }
+            />
+
+          </div>
+
+        </div>
+
       </div>
 
-   <div
-      className="absolute left-[300px] right-0 top-0 bottom-0"
-        onClick={() => setLensOverlayOpen(false)}
-      />
-  </div>
-)}
+      {/* ================================================== */}
+      {/* MOBILE LENS OVERLAY */}
+      {/* ================================================== */}
+
+      {lensOverlayOpen && (
+        <div className="absolute inset-0 z-50 bg-black/70 xl:hidden">
+
+          {/* ================================================== */}
+          {/* MOBILE LEFT PANEL */}
+          {/* ================================================== */}
+
+          <div
+            className="
+              absolute
+              bottom-0
+              left-0
+              top-9
+              w-[280px]
+              overflow-y-auto
+              border-r
+              border-white/10
+              bg-[#0B1220]
+            "
+          >
+
+            <LeftIntelligencePanel
+              onLensSelect={() =>
+                setLensOverlayOpen(false)
+              }
+            />
+
+          </div>
+
+          {/* ================================================== */}
+          {/* MOBILE BACKDROP */}
+          {/* ================================================== */}
+
+          <div
+            className="
+              absolute
+              bottom-0
+              left-[280px]
+              right-0
+              top-0
+            "
+            onClick={() =>
+              setLensOverlayOpen(false)
+            }
+          />
+
+        </div>
+      )}
+
     </div>
   );
 }
 
-/* ---------------- PAGE WRAPPER ---------------- */
+/* ================================================== */
+/* PAGE WRAPPER */
+/* ================================================== */
 
 export default function MarketPage() {
   return (
     <AuthGuard>
+
       <MarketProvider>
+
         <TerminalProvider>
+
           <MarketTerminal />
+
         </TerminalProvider>
+
       </MarketProvider>
+
     </AuthGuard>
   );
 }

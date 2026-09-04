@@ -1,7 +1,6 @@
 import type { Coin } from "../types/coin";
 import type { MarketEngineOutput } from "./marketEngine";
 
-
 export type MarketIntelligenceLayer = {
   mood: string;
   conviction: "LOW" | "MEDIUM" | "HIGH";
@@ -20,6 +19,8 @@ export type MarketIntelligenceLayer = {
   };
 
   leaders: Coin[];
+
+  sectorRotation: MarketEngineOutput["sectorRotation"];
 };
 
 export function buildMarketIntelligence(
@@ -87,5 +88,7 @@ export function buildMarketIntelligence(
     },
 
     leaders: engine.leaders,
+
+    sectorRotation: engine.sectorRotation,
   };
 }

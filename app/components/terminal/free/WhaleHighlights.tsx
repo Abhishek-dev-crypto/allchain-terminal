@@ -3,23 +3,17 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
-import type { Coin } from '@/lib/types/coin';
-
 import {
   buildWhaleInsights,
 } from '@/lib/intel/buildWhaleInsights';
+
 import { useMarket } from '@/lib/providers/MarketProvider';
 
-type Props = {
-  coins: Coin[];
-};
-
 export default function WhaleHighlights() {
-
-  const {coins} = useMarket();
+  const { coins } = useMarket();
 
   /**
-   * 🧠 WHALE ENGINE
+   * 🧠 WHALE INTELLIGENCE ENGINE
    */
   const whale = useMemo(() => {
     return buildWhaleInsights(coins);
@@ -60,8 +54,37 @@ export default function WhaleHighlights() {
     },
   };
 
-  const styles =
-    biasStyles[whale.bias];
+  const styles = biasStyles[whale.bias];
+
+  /**
+   * 🎨 ACTIVITY COLOR
+   */
+  const activityColor =
+    whale.activity === 'AGGRESSIVE'
+      ? 'text-red-300'
+      : whale.activity === 'ACTIVE'
+      ? 'text-yellow-300'
+      : 'text-cyan-300';
+
+  /**
+   * 🧠 BEGINNER-FRIENDLY ACTIVITY DESCRIPTION
+   */
+  const activityDescription =
+    whale.activity === 'AGGRESSIVE'
+      ? 'Major assets are showing unusually strong movement.'
+      : whale.activity === 'ACTIVE'
+      ? 'Major assets are showing elevated market activity.'
+      : 'Major assets are showing relatively calm activity.';
+
+  /**
+   * 🧠 BEGINNER-FRIENDLY BIAS DESCRIPTION
+   */
+  const biasDescription =
+    whale.bias === 'ACCUMULATION'
+      ? 'Large-cap assets are showing stronger buying pressure.'
+      : whale.bias === 'DISTRIBUTION'
+      ? 'Large-cap assets are showing stronger selling pressure.'
+      : 'Buying and selling pressure remain relatively balanced.';
 
   return (
     <motion.section
@@ -84,7 +107,7 @@ export default function WhaleHighlights() {
     >
 
       {/* HEADER */}
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-4 flex items-start justify-between gap-4">
 
         <div>
 
@@ -99,10 +122,9 @@ export default function WhaleHighlights() {
           </div>
 
           <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/60">
-            AI-tracked institutional positioning
-            derived from large-cap participation,
-            volatility expansion, liquidity pressure,
-            and cross-market capital behavior.
+            AI-estimated large-cap buying and selling pressure
+            based on market participation, price movement,
+            and volatility.
           </p>
 
         </div>
@@ -110,6 +132,7 @@ export default function WhaleHighlights() {
         {/* CONFIDENCE */}
         <div
           className={`
+            shrink-0
             rounded-xl
             border
             px-4
@@ -131,6 +154,19 @@ export default function WhaleHighlights() {
 
       </div>
 
+      {/* SUMMARY */}
+      <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+
+        <div className="text-[11px] uppercase tracking-wide text-white/40">
+          What This Means
+        </div>
+
+        <p className="mt-1 text-xs leading-relaxed text-white/60">
+          {biasDescription}
+        </p>
+
+      </div>
+
       {/* GRID */}
       <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
 
@@ -141,12 +177,14 @@ export default function WhaleHighlights() {
             Whale Activity
           </div>
 
-          <div className="mt-1 text-sm font-semibold text-white">
+          <div
+            className={`mt-1 text-sm font-semibold ${activityColor}`}
+          >
             {whale.activity}
           </div>
 
-          <div className="text-[10px] text-white/40">
-            Institutional participation
+          <div className="mt-1 text-[10px] leading-relaxed text-white/40">
+            {activityDescription}
           </div>
 
         </div>
@@ -155,7 +193,7 @@ export default function WhaleHighlights() {
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
 
           <div className="text-[11px] uppercase tracking-wide text-white/40">
-            Bias
+            Market Bias
           </div>
 
           <div
@@ -164,8 +202,8 @@ export default function WhaleHighlights() {
             {whale.bias}
           </div>
 
-          <div className="text-[10px] text-white/40">
-            Smart money positioning
+          <div className="mt-1 text-[10px] leading-relaxed text-white/40">
+            Buying vs selling pressure
           </div>
 
         </div>
@@ -181,46 +219,48 @@ export default function WhaleHighlights() {
             {whale.pressureZone}
           </div>
 
-          <div className="text-[10px] text-white/40">
-            Dominant capital behavior
+          <div className="mt-1 text-[10px] leading-relaxed text-white/40">
+            Asset showing the strongest move
           </div>
 
         </div>
 
-        {/* SIGNAL */}
+        {/* CONFIDENCE */}
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
 
           <div className="text-[11px] uppercase tracking-wide text-white/40">
-            Smart Money Signal
+            Signal Confidence
           </div>
 
-          <div className="mt-1 text-sm font-semibold text-white">
-            {whale.activity}
+          <div
+            className={`mt-1 text-sm font-semibold ${styles.text}`}
+          >
+            {whale.confidence}%
           </div>
 
-          <div className="text-[10px] text-white/40">
-            Whale conviction intensity
+          <div className="mt-1 text-[10px] leading-relaxed text-white/40">
+            Strength of the current signal
           </div>
 
         </div>
 
       </div>
 
-      {/* INTERPRETATION */}
-      <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.02] p-2">
+      {/* AI INTERPRETATION */}
+      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
 
         <div className="text-[11px] uppercase tracking-wide text-white/40">
           AI Interpretation
         </div>
 
-       <p className="mt-1 text-xs text-white/60">
+        <p className="mt-1 text-xs leading-relaxed text-white/60">
           {whale.interpretation}
         </p>
 
       </div>
 
       {/* LEADERS */}
-      <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.02] p-2">
+      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
 
         <div className="mb-4 flex items-center justify-between">
 
@@ -231,7 +271,7 @@ export default function WhaleHighlights() {
             </div>
 
             <div className="mt-1 text-sm text-white/60">
-              Assets attracting institutional-scale positioning
+              Large-cap assets showing the strongest pressure
             </div>
 
           </div>
@@ -254,6 +294,7 @@ export default function WhaleHighlights() {
                 className="flex items-center justify-between"
               >
 
+                {/* ASSET */}
                 <div className="flex items-center gap-3">
 
                   <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-xs font-bold text-white">
@@ -267,28 +308,37 @@ export default function WhaleHighlights() {
                     </div>
 
                     <div
-                      className={`text-[11px] ${
-                        leader.pressure ===
-                        'BUYING'
-                          ? 'text-emerald-300'
-                          : 'text-red-300'
-                      }`}
+                      className={`
+                        text-[11px]
+                        ${
+                          leader.pressure === 'BUYING'
+                            ? 'text-emerald-300'
+                            : 'text-red-300'
+                        }
+                      `}
                     >
-                      {leader.pressure}
+                      {leader.pressure === 'BUYING'
+                        ? 'Buying pressure'
+                        : 'Selling pressure'}
                     </div>
 
                   </div>
 
                 </div>
 
+                {/* METRICS */}
                 <div className="text-right">
 
                   <div
-                    className={`text-xs font-medium ${
-                      leader.change24h >= 0
-                        ? 'text-emerald-300'
-                        : 'text-red-300'
-                    }`}
+                    className={`
+                      text-xs
+                      font-medium
+                      ${
+                        leader.change24h >= 0
+                          ? 'text-emerald-300'
+                          : 'text-red-300'
+                      }
+                    `}
                   >
                     {leader.change24h >= 0
                       ? '+'
@@ -297,13 +347,20 @@ export default function WhaleHighlights() {
                   </div>
 
                   <div className="text-[11px] text-white/40">
-                    Intensity {leader.intensity}
+                    Pressure {leader.intensity}/100
                   </div>
 
                 </div>
 
               </div>
+
             )
+          )}
+
+          {!whale.leaders.length && (
+            <div className="py-4 text-center text-xs text-white/40">
+              Waiting for sufficient market data.
+            </div>
           )}
 
         </div>

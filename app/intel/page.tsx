@@ -8,12 +8,12 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
+import { trackEvent } from "lib/analytics";
+
 export default function IntelPage() {
 
   useEffect(() => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "intel_loaded");
-  }
+  trackEvent("intel_loaded");
 }, []);
 
   return (

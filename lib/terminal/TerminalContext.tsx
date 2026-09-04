@@ -23,7 +23,10 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
 
 export function useTerminal() {
   const ctx = useContext(TerminalContext);
-  if (!ctx) throw new Error("useTerminal must be used inside provider");
+
+  if (!ctx) {
+    throw new Error("useTerminal must be used inside provider");
+  }
+
   return ctx;
 }
-

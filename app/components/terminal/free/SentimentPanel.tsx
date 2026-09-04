@@ -13,8 +13,8 @@ type NewsItem = {
   sentiment: "bullish" | "bearish" | "neutral";
   url: string;
   votes?: {
-  positive?: number;
-  negative?: number;
+    positive?: number;
+    negative?: number;
   };
 };
 
@@ -23,20 +23,26 @@ type Narrative = {
   score: number;
   momentum: number;
   examples: string[];
-  };
+};
 
 export default function SentimentPanel() {
   const [items, setItems] = useState<NewsItem[]>([]);
-const [score, setScore] = useState(50);
+  const [score, setScore] = useState(50);
 
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
-const [lastUpdated, setLastUpdated] =
-  useState<number | null>(null);
-  
-  const [sentimentExpanded, setSentimentExpanded] = useState(false);
-  const [narratives, setNarratives] = useState<Narrative[]>([]);
-  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] =
+    useState<number | null>(null);
+
+  const [sentimentExpanded, setSentimentExpanded] =
+    useState(false);
+
+  const [narratives, setNarratives] =
+    useState<Narrative[]>([]);
+
+  /* =========================================================
+     FETCH LIVE SENTIMENT DATA
+  ========================================================= */
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -44,58 +50,57 @@ const [lastUpdated, setLastUpdated] =
 
       try {
         setError(null);
-        
 
-          const newsRes = await fetch("/api/intel/news");
+        const newsRes = await fetch("/api/intel/news");
 
-          if (!newsRes.ok) {
-            throw new Error("NEWS_FEED_ERROR");
-          }
+        if (!newsRes.ok) {
+          throw new Error("NEWS_FEED_ERROR");
+        }
 
-          const newsData = await newsRes.json();
+        const newsData = await newsRes.json();
 
-         const allSources: NewsItem[] = newsData.map((n: any) => {
+        const allSources: NewsItem[] = newsData.map(
+          (n: any) => {
+            const sentiment =
+              n.votes
+                ? mapCryptoPanicSentiment(n.votes)
+                : analyzeSentiment(n.title);
 
-                const cryptoPanicSentiment =
-                    n.votes
-                    ? mapCryptoPanicSentiment(n.votes)
-                   : analyzeSentiment(n.title);
-
-          return {
-                title: n.title,
-                source: n.source,
-                sentiment: cryptoPanicSentiment,
-                url: n.url,
-                votes: n.votes,
-              };
-          });
-
-          const narrativeResults = buildNarratives(
-            
-              allSources.map((n) => ({
+            return {
               title: n.title,
               source: n.source,
-            }))
+              sentiment,
+              url: n.url,
+              votes: n.votes,
+            };
+          }
+        );
+
+        const narrativeResults = buildNarratives(
+          allSources.map((n) => ({
+            title: n.title,
+            source: n.source,
+          }))
+        );
+
+        const sortedNarratives =
+          [...narrativeResults].sort(
+            (a, b) => b.score - a.score
           );
 
-          const sortedNarratives = [...narrativeResults].sort(
-           (a, b) => b.score - a.score
-            );
+        setNarratives(sortedNarratives);
+        setItems(allSources);
+        setLastUpdated(Date.now());
 
-          setNarratives(sortedNarratives);
-
-          
-          setItems(allSources);
-          setLastUpdated(Date.now());
-
-        // =========================
-        // SENTIMENT FUSION ENGINE
-        // =========================
-        const result = computeFusionScore(allSources);
+        const result =
+          computeFusionScore(allSources);
 
         setScore(result);
       } catch (err) {
-          console.error("Sentiment engine error:", err);
+        console.error(
+          "Sentiment engine error:",
+          err
+        );
 
         setError(
           "Unable to retrieve market news and sentiment signals."
@@ -108,39 +113,56 @@ const [lastUpdated, setLastUpdated] =
     fetchAll();
 
     const handleEsc = (e: KeyboardEvent) => {
-          if (e.key === "Escape") {
-            setSentimentExpanded(false);
-          }
-        };
+      if (e.key === "Escape") {
+        setSentimentExpanded(false);
+      }
+    };
 
-        window.addEventListener("keydown", handleEsc);
+    window.addEventListener(
+      "keydown",
+      handleEsc
+    );
 
-    const interval = setInterval(fetchAll, 60000);
+    const interval = setInterval(
+      fetchAll,
+      60000
+    );
 
     return () => {
-          clearInterval(interval);
-          window.removeEventListener("keydown", handleEsc);
-        };
+      clearInterval(interval);
+      window.removeEventListener(
+        "keydown",
+        handleEsc
+      );
+    };
   }, []);
 
- useEffect(() => {
-  if (sentimentExpanded) {
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-    document.documentElement.style.overflow = "";
-  }
+  /* =========================================================
+     LOCK PAGE WHEN EXPANDED
+  ========================================================= */
 
-  return () => {
-    document.body.style.overflow = "";
-    document.documentElement.style.overflow = "";
-  };
-}, [sentimentExpanded]);
+  useEffect(() => {
+    if (sentimentExpanded) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow =
+        "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow =
+        "";
+    }
 
-  // =========================
-  // BASIC TEXT SENTIMENT
-  // =========================
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow =
+        "";
+    };
+  }, [sentimentExpanded]);
+
+  /* =========================================================
+     BASIC TEXT SENTIMENT
+  ========================================================= */
+
   const analyzeSentiment = (text: string) => {
     const t = text.toLowerCase();
 
@@ -164,21 +186,33 @@ const [lastUpdated, setLastUpdated] =
       "decline",
     ];
 
-    let b = 0,
-      s = 0;
+    let b = 0;
+    let s = 0;
 
-    bullish.forEach((w) => t.includes(w) && b++);
-    bearish.forEach((w) => t.includes(w) && s++);
+    bullish.forEach(
+      (w) => t.includes(w) && b++
+    );
+
+    bearish.forEach(
+      (w) => t.includes(w) && s++
+    );
 
     if (b > s) return "bullish";
     if (s > b) return "bearish";
+
     return "neutral";
   };
 
-  // =========================
-  // CRYPTOPANIC WEIGHTING
-  // =========================
-  const mapCryptoPanicSentiment = ( votes?: { positive?: number; negative?: number; })  => {
+  /* =========================================================
+     CRYPTOPANIC SENTIMENT
+  ========================================================= */
+
+  const mapCryptoPanicSentiment = (
+    votes?: {
+      positive?: number;
+      negative?: number;
+    }
+  ) => {
     if (!votes) return "neutral";
 
     const up = votes.positive || 0;
@@ -186,13 +220,17 @@ const [lastUpdated, setLastUpdated] =
 
     if (up > down) return "bullish";
     if (down > up) return "bearish";
+
     return "neutral";
   };
 
-  // =========================
-  // FUSION ENGINE
-  // =========================
-  const computeFusionScore = (data: NewsItem[]) => {
+  /* =========================================================
+     SENTIMENT FUSION
+  ========================================================= */
+
+  const computeFusionScore = (
+    data: NewsItem[]
+  ) => {
     let score = 50;
 
     const weights = {
@@ -202,23 +240,61 @@ const [lastUpdated, setLastUpdated] =
     };
 
     data.forEach((d) => {
-      if (d.title.toLowerCase().includes("etf")) score += 3;
-      if (d.title.toLowerCase().includes("surge")) score += 2;
-      if (d.title.toLowerCase().includes("record inflow")) score += 4;
+      const title =
+        d.title.toLowerCase();
 
-      if (d.title.toLowerCase().includes("hack")) score -= 3;
-      if (d.title.toLowerCase().includes("exploit")) score -= 4;
-      if (d.title.toLowerCase().includes("lawsuit")) score -= 2;
+      if (title.includes("etf")) {
+        score += 3;
+      }
+
+      if (title.includes("surge")) {
+        score += 2;
+      }
+
+      if (title.includes("record inflow")) {
+        score += 4;
+      }
+
+      if (title.includes("hack")) {
+        score -= 3;
+      }
+
+      if (title.includes("exploit")) {
+        score -= 4;
+      }
+
+      if (title.includes("lawsuit")) {
+        score -= 2;
+      }
+
       let impact = 0;
 
-      if (d.sentiment === "bullish") impact = +1;
-      if (d.sentiment === "bearish") impact = -1;
+      if (d.sentiment === "bullish") {
+        impact = 1;
+      }
 
-      score += impact * ((weights as any)[d.source] || 0.1) * 10;
+      if (d.sentiment === "bearish") {
+        impact = -1;
+      }
+
+      score +=
+        impact *
+        ((weights as any)[d.source] || 0.1) *
+        10;
     });
 
-    return Math.max(0, Math.min(100, Math.round(score)));
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(score)
+      )
+    );
   };
+
+  /* =========================================================
+     SENTIMENT LABEL
+  ========================================================= */
 
   const label =
     score < 25
@@ -231,639 +307,876 @@ const [lastUpdated, setLastUpdated] =
       ? "BULLISH"
       : "EXTREME GREED";
 
+  /* =========================================================
+     LOADING / ERROR STATES
+  ========================================================= */
+
   if (loading && items.length === 0) {
-  return <TerminalSkeleton />;
-}
+    return <TerminalSkeleton />;
+  }
 
   if (error && items.length === 0) {
-  return (
-    <IntelFallback
-      title="Sentiment Engine Offline"
-      message={error}
-      severity="warning"
-    />
-  );
-}
-
-   const explainNarrative = (name: string) => {
-  switch (name) {
-    case "REGULATION":
-      return {
-        icon: "⚖️",
-        title: "Government & Regulation Activity",
-        description:
-          "Governments and regulators are becoming more active in crypto markets.",
-      };
-
-    case "INSTITUTIONAL":
-      return {
-        icon: "🏦",
-        title: "Large Investor Activity",
-        description:
-          "Large financial firms and professional investors are increasing crypto exposure.",
-      };
-
-    case "LIQUIDITY":
-      return {
-        icon: "💧",
-        title: "Global Money Flow",
-        description:
-          "Global money flow and economic conditions are strongly affecting crypto prices.",
-      };
-
-    case "RETAIL_FOMO":
-      return {
-        icon: "🚀",
-        title: "Retail Hype Rising",
-        description:
-          "Smaller traders and social media hype are driving speculative buying.",
-      };
-
-    case "ETF_FLOW":
-      return {
-        icon: "📈",
-        title: "Bitcoin ETF Demand",
-        description:
-          "Bitcoin ETF activity and large fund inflows are influencing the market.",
-      };
-
-    case "WHALES":
-      return {
-        icon: "🐋",
-        title: "Large Whale Activity",
-        description:
-          "Very large crypto investors ('whales') are making trades that can move the market.",
-      };
-
-    case "AI_CRYPTO":
-      return {
-        icon: "🤖",
-        title: "AI Crypto Momentum",
-        description:
-          "AI-related crypto projects are gaining investor attention.",
-      };
-
-    case "MEME_SPECULATION":
-      return {
-        icon: "🎭",
-        title: "Meme Coin Speculation",
-        description:
-          "High-risk meme coin trading activity is increasing.",
-      };
-
-    default:
-      return {
-        icon: "🧠",
-        title: "Market Narrative",
-        description:
-          "AI systems detected an emerging market trend.",
-      };
-  }
-};
-
-   const generateSummary = () => {
-  const top = narratives[0];
-
-  if (!top) {
-    return "AI systems are detecting mixed and uncertain crypto market conditions.";
+    return (
+      <IntelFallback
+        title="Sentiment Engine Offline"
+        message={error}
+        severity="warning"
+      />
+    );
   }
 
-  if (score >= 70) {
-    return "Crypto markets are showing strong bullish momentum with rising investor confidence.";
-  }
+  /* =========================================================
+     NARRATIVE EXPLANATIONS
+  ========================================================= */
 
-  if (score <= 35) {
-    return "Markets are showing fear and defensive trading behavior across crypto assets.";
-  }
-
-  switch (top.name) {
-    case "REGULATION":
-      return "Government actions and new crypto regulations are heavily affecting market sentiment.";
-
-    case "INSTITUTIONAL":
-      return "Large investors and financial firms are increasing their influence on crypto markets.";
-
-    case "LIQUIDITY":
-      return "Global money flow and economic news are becoming major drivers for crypto prices.";
-
-    case "RETAIL_FOMO":
-      return "Retail traders and social media hype are accelerating market momentum.";
-
-    case "ETF_FLOW":
-      return "Bitcoin ETF demand and institutional buying are supporting market activity.";
-
-    case "WHALES":
-      return "Large crypto holders are making significant moves that may impact prices.";
-
-    case "AI_CRYPTO":
-      return "AI-focused crypto projects are attracting growing market attention.";
-
-    case "MEME_SPECULATION":
-      return "Speculative meme coin trading activity is increasing across the market.";
-
-    default:
-      return "AI systems are tracking multiple market trends and investor behaviors.";
-  }
-};
-
-
-    const uniqueItems = items.filter(
-  (item, index, self) =>
-    index === self.findIndex((t) => t.title === item.title)
-);
-
-   const sentimentUI = {
-  "EXTREME FEAR": {
-    color: "text-red-400",
-    border: "border-red-500/30",
-    glow: "shadow-lg shadow-red-500/20",
-    badge: "bg-red-500/10",
-    icon: "💀",
-  },
-
-  FEAR: {
-  color: "text-orange-400",
-  border: "border-orange-500/30",
-  glow: "shadow-lg shadow-orange-500/20",
-  badge: "bg-orange-500/10",
-  icon: "⚠️",
-},
-
-  NEUTRAL: {
-    color: "text-yellow-400",
-    border: "border-yellow-500/30",
-     glow: "shadow-lg shadow-yellow-500/20",
-    badge: "bg-yellow-500/10",
-    icon: "🟡",
-  },
-
-  BULLISH: {
-    color: "text-emerald-400",
-    border: "border-emerald-500/30",
-    glow: "shadow-lg shadow-emerald-500/20",
-    badge: "bg-emerald-500/10",
-    icon: "🚀",
-  },
-
-  "EXTREME GREED": {
-    color: "text-green-400",
-    border: "border-green-500/30",
-     glow: "shadow-lg shadow-green-500/20",
-    badge: "bg-green-500/10",
-    icon: "🤑",
-  },
-};
-
-const activeUI =
-  sentimentUI[label as keyof typeof sentimentUI] ??
-  sentimentUI.NEUTRAL;
-
-const alerts = narratives
-  .filter((n) => n.score > 2)
-  .map((n) => {
-    switch (n.name) {
+  const explainNarrative = (
+    name: string
+  ) => {
+    switch (name) {
       case "REGULATION":
-        return "⚠️ Regulation pressure increasing";
+        return {
+          icon: "⚖️",
+          title: "Government & Regulation",
+          description:
+            "Government decisions and new crypto rules are influencing investor confidence.",
+        };
 
-      case "ETF_FLOW":
-        return "📈 ETF narrative accelerating";
+      case "INSTITUTIONAL":
+        return {
+          icon: "🏦",
+          title: "Large Investors",
+          description:
+            "Banks, funds and other large investors are attracting attention in the crypto market.",
+        };
 
       case "LIQUIDITY":
-        return "💧 Liquidity conditions stabilizing";
+        return {
+          icon: "💧",
+          title: "Money Flow",
+          description:
+            "Changes in the amount of money available in markets are affecting investor behaviour.",
+        };
+
+      case "RETAIL_FOMO":
+        return {
+          icon: "🚀",
+          title: "Retail Hype",
+          description:
+            "Individual traders and social media activity are increasing interest in crypto.",
+        };
+
+      case "ETF_FLOW":
+        return {
+          icon: "📈",
+          title: "Bitcoin ETF Activity",
+          description:
+            "Bitcoin ETF demand and fund activity are influencing market sentiment.",
+        };
+
+      case "WHALES":
+        return {
+          icon: "🐋",
+          title: "Large Holder Activity",
+          description:
+            "Very large crypto holders are becoming part of the current market story.",
+        };
+
+      case "AI_CRYPTO":
+        return {
+          icon: "🤖",
+          title: "AI & Crypto",
+          description:
+            "Crypto projects connected to AI are attracting investor attention.",
+        };
+
+      case "MEME_SPECULATION":
+        return {
+          icon: "🎭",
+          title: "Meme Coin Speculation",
+          description:
+            "Speculative trading around meme coins is becoming more noticeable.",
+        };
 
       default:
-        return null;
+        return {
+          icon: "🧠",
+          title: "Market Story",
+          description:
+            "A market theme is attracting investor attention.",
+        };
     }
-  })
-  .filter(Boolean);
+  };
 
-  const confidence =
-  Math.min(
-    95,
-    Math.round(
-      (
-        narratives.filter((n) => n.score > 2).length * 18 +
-        uniqueItems.length * 2 +
-        score
-      ) / 2
-    )
+  /* =========================================================
+     SIMPLE MARKET SUMMARY
+  ========================================================= */
+
+  const generateSummary = () => {
+    const top = narratives[0];
+
+    if (!top) {
+      return "Investor sentiment is mixed, and there is no clear dominant story right now.";
+    }
+
+    if (score >= 70) {
+      return "Investors are showing strong confidence, with positive sentiment dominating the market.";
+    }
+
+    if (score <= 35) {
+      return "Fear is dominating the market, and investors are behaving more cautiously.";
+    }
+
+    switch (top.name) {
+      case "REGULATION":
+        return "Government decisions and crypto regulations are currently having a strong influence on investor sentiment.";
+
+      case "INSTITUTIONAL":
+        return "Activity from large investors and financial firms is becoming an important part of the market story.";
+
+      case "LIQUIDITY":
+        return "Money-flow and economic conditions are currently influencing how investors view crypto.";
+
+      case "RETAIL_FOMO":
+        return "Retail traders and social media activity are increasing attention and speculation.";
+
+      case "ETF_FLOW":
+        return "Bitcoin ETF activity is influencing investor demand and market sentiment.";
+
+      case "WHALES":
+        return "Large crypto holders are attracting attention and becoming part of the current market story.";
+
+      case "AI_CRYPTO":
+        return "AI-related crypto projects are attracting increasing investor attention.";
+
+      case "MEME_SPECULATION":
+        return "Speculative activity around meme coins is becoming more noticeable.";
+
+      default:
+        return "Several market stories are competing for investor attention.";
+    }
+  };
+
+  /* =========================================================
+     UNIQUE NEWS
+  ========================================================= */
+
+  const uniqueItems = items.filter(
+    (item, index, self) =>
+      index ===
+      self.findIndex(
+        (t) =>
+          t.title === item.title
+      )
   );
 
-  const aiConclusion = generateAIConclusion({
-  score,
-  narratives,
-  items: uniqueItems,
-  confidence,
-});
+  /* =========================================================
+     SENTIMENT UI
+  ========================================================= */
 
-  const sourceStyles = {
-  CryptoPanic: "bg-violet-500/10 text-violet-300",
-  Reddit: "bg-orange-500/10 text-orange-300",
-  CoinGecko: "bg-green-500/10 text-green-300",
-};
+  const sentimentUI = {
+    "EXTREME FEAR": {
+      color: "text-red-400",
+      border: "border-red-500/30",
+      glow: "shadow-lg shadow-red-500/20",
+      badge: "bg-red-500/10",
+      icon: "💀",
+      simpleLabel: "Very Fearful",
+    },
 
- const fakeTimes = [
-  "2m ago",
-  "5m ago",
-  "12m ago",
-  "18m ago",
-  "26m ago",
-  "41m ago",
-];
+    FEAR: {
+      color: "text-orange-400",
+      border: "border-orange-500/30",
+      glow: "shadow-lg shadow-orange-500/20",
+      badge: "bg-orange-500/10",
+      icon: "⚠️",
+      simpleLabel: "Cautious",
+    },
 
+    NEUTRAL: {
+      color: "text-yellow-400",
+      border: "border-yellow-500/30",
+      glow: "shadow-lg shadow-yellow-500/20",
+      badge: "bg-yellow-500/10",
+      icon: "🟡",
+      simpleLabel: "Mixed",
+    },
 
+    BULLISH: {
+      color: "text-emerald-400",
+      border: "border-emerald-500/30",
+      glow: "shadow-lg shadow-emerald-500/20",
+      badge: "bg-emerald-500/10",
+      icon: "🚀",
+      simpleLabel: "Positive",
+    },
 
- return (
-  <motion.div
-    className={
+    "EXTREME GREED": {
+      color: "text-green-400",
+      border: "border-green-500/30",
+      glow: "shadow-lg shadow-green-500/20",
+      badge: "bg-green-500/10",
+      icon: "🤑",
+      simpleLabel: "Very Positive",
+    },
+  };
+
+  const activeUI =
+    sentimentUI[
+      label as keyof typeof sentimentUI
+    ] ?? sentimentUI.NEUTRAL;
+
+  /* =========================================================
+     SIGNALS
+  ========================================================= */
+
+  const alerts = narratives
+    .filter((n) => n.score > 2)
+    .map((n) => {
+      switch (n.name) {
+        case "REGULATION":
+          return "⚠️ Regulation is becoming an important market driver.";
+
+        case "ETF_FLOW":
+          return "📈 Bitcoin ETF activity is attracting increased attention.";
+
+        case "LIQUIDITY":
+          return "💧 Money-flow conditions are becoming an important market driver.";
+
+        default:
+          return null;
+      }
+    })
+    .filter(Boolean);
+
+  /* =========================================================
+     AI CONCLUSION
+     
+     Existing confidence calculation is retained internally
+     because the existing AI conclusion engine expects it.
+     It is NOT displayed as "AI Confidence" to users.
+  ========================================================= */
+
+  const confidence =
+    Math.min(
+      95,
+      Math.round(
+        (
+          narratives.filter(
+            (n) => n.score > 2
+          ).length *
+            18 +
+          uniqueItems.length * 2 +
+          score
+        ) / 2
+      )
+    );
+
+  const aiConclusion =
+    generateAIConclusion({
+      score,
+      narratives,
+      items: uniqueItems,
+      confidence,
+    });
+
+  /* =========================================================
+     TIME
+  ========================================================= */
+
+  const updatedText =
+    lastUpdated
+      ? `Updated ${Math.floor(
+          (Date.now() - lastUpdated) /
+            1000
+        )}s ago`
+      : "";
+
+  /* =========================================================
+     UI
+  ========================================================= */
+
+  return (
+    <motion.div
+      className={
         sentimentExpanded
-        ? "fixed inset-0 z-50 bg-black/80 backdrop-blur-md overflow-y-auto flex justify-center items-start p-6"
-        : ""
-    }
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-  >
-   <div
-      className={`
-           ${sentimentExpanded ? "w-full max-w-5xl" : "overflow-hidden"}
-            ${sentimentExpanded ? "p-2" : "p-4"}
-              rounded-lg
-              border
-              bg-white/5
-            ${sentimentExpanded ? "space-y-3" : "space-y-4"}
-            ${activeUI.border}
-            ${activeUI.glow}
-          `}
-        >
-    {/* HEADER */}
-   <div className="flex justify-between items-center">
-      <h2 className="text-[10px] uppercase tracking-[0.35em] font-bold text-white">
-          Sentiment Engine
-      </h2>
-
-      {lastUpdated && (
-  <div className="text-[10px] text-white/30">
-    Updated{" "}
-    {Math.floor(
-      (Date.now() - lastUpdated) / 1000
-    )}
-    s ago
-  </div>
-)}
-
-      <span
+          ? "fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md md:p-6"
+          : ""
+      }
+      initial={{
+        opacity: 0,
+        y: 10,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
+    >
+      <div
         className={`
-          text-xs px-2 py-1 rounded flex items-center gap-1
-          ${activeUI.badge}
-          ${activeUI.color}
+          rounded-lg
+          border
+          bg-white/5
+          ${activeUI.border}
+          ${activeUI.glow}
+          ${
+            sentimentExpanded
+              ? "w-full max-w-5xl p-4"
+              : "overflow-hidden p-4"
+          }
         `}
       >
-        <span>{activeUI.icon}</span>
-        {label}
-      </span>
 
-          {sentimentExpanded && (
-          <button
-                onClick={() => setSentimentExpanded(false)}
-                className="text-xs text-white/50 hover:text-white"
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
+
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[9px] uppercase tracking-[0.3em] text-cyan-300/60">
+              Investor Psychology
+            </div>
+
+            <h2 className="mt-1 text-sm font-semibold text-white">
+              Market Sentiment
+            </h2>
+
+            <p className="mt-1 max-w-md text-[10px] leading-relaxed text-white/35">
+              Shows whether investors are feeling more
+              positive, negative, or uncertain about crypto.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className={`
+                flex items-center gap-1.5
+                rounded-md
+                px-2 py-1
+                text-[9px]
+                font-semibold
+                ${activeUI.badge}
+                ${activeUI.color}
+              `}
+            >
+              <span>{activeUI.icon}</span>
+              {activeUI.simpleLabel}
+            </span>
+
+            {sentimentExpanded && (
+              <button
+                onClick={() =>
+                  setSentimentExpanded(false)
+                }
+                className="text-[10px] text-white/40 hover:text-white"
               >
-               ✕ Close
-          </button>
-          )}
-
-    </div>
-
-    {error && items.length > 0 && (
-  <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2">
-    <div className="text-xs text-yellow-300">
-      ⚠ Data feed delayed
-    </div>
-
-    <div className="mt-1 text-[11px] text-white/50">
-      Showing last successful sentiment snapshot.
-    </div>
-  </div>
-)}
-
-    {/* SCORE SECTION */}
-    <div className="space-y-3">
-      <div className="flex items-end justify-between">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className={`text-2xl font-bold ${activeUI.color}`}
-        >
-          {score}
-        </motion.div>
-
-        <div className="text-xs text-white/50">Market Mood</div>
-      </div>
-
-      {/* TEMPERATURE BAR */}
-      <div className="space-y-1">
-        <div className="w-full h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-400 relative">
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-lg border border-black"
-            style={{ left: `calc(${score}% - 8px)` }}
-          />
-        </div>
-
-        <div className="flex justify-between text-[10px] text-white/40 uppercase tracking-wide">
-          <span>Extreme Fear</span>
-          <span>Greed</span>
-        </div>
-      </div>
-
-      {/* AI MARKET READ */}
-      <div className="p-2.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-emerald-500/10 border border-white/10">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-white/40">
-            AI Market Read
-        </div>
-
-        <div className="text-sm leading-relaxed text-white/80">
-          {generateSummary()}
-        </div>
-
-        <div className="mt-3 pt-3 border-t border-white/10">
-          <div className="text-[10px] uppercase tracking-wide text-white/40 mb-1">
-           What This Means For Traders
-          </div>
-
-          <div className="text-xs text-white/60 leading-relaxed">
-            {score < 40
-              ? "Short-term volatility and defensive market behavior may continue."
-              : score < 60
-              ? "Markets remain uncertain as traders wait for stronger confirmation."
-              : "Momentum and risk appetite are improving across crypto markets."}
+                ✕ Close
+              </button>
+            )}
           </div>
         </div>
 
-        {/* AI CONFIDENCE */}
-        <div className="mt-3">
-          <div className="flex justify-between text-[10px] text-white/40 mb-1 uppercase tracking-wide">
-            <span>AI Confidence</span>
-            <span>{confidence}%</span>
-          </div>
+        {/* =====================================================
+            DATA WARNING
+        ===================================================== */}
 
-          <div className="text-[10px] text-white/30 mb-2">
-              Measures how confident the AI is after analyzing market news, momentum, and investor activity.
-          </div>
-
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${confidence}%` }}
-              transition={{ duration: 1 }}
-              className="h-full bg-gradient-to-r from-violet-500 to-emerald-400"
-            />
-          </div>
-        </div>
-      </div>
-
-              {/* ========================= */}
-{/* AI CONCLUSION ENGINE */}
-{/* ========================= */}
-
-<div className="p-2 rounded-lg border border-violet-500/20 bg-violet-500/5 space-y-3">
-
-  <div className="flex items-center justify-between">
-    <div className="text-sm font-semibold text-violet-300">
-      🧠 AI Market Conclusion
-    </div>
-
-    <div className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60">
-      {aiConclusion.state}
-    </div>
-  </div>
-
-  {/* SUMMARY */}
-  <div>
-    <div className="text-[10px] uppercase tracking-wide text-white/40 mb-1">
-      AI Interpretation
-    </div>
-
-    <div className="text-sm text-white/80 leading-relaxed">
-      {aiConclusion.summary}
-    </div>
-  </div>
-
-  {/* OUTLOOK */}
-  <div>
-    <div className="text-[10px] uppercase tracking-wide text-white/40 mb-1">
-      Short-Term Outlook
-    </div>
-
-    <div className="text-xs text-white/60 leading-relaxed">
-      {aiConclusion.outlook}
-    </div>
-  </div>
-
-  {/* RISK + BEHAVIOR */}
-  <div className="grid grid-cols-2 gap-2">
-
-    <div className="rounded-lg bg-black/30 border border-white/10 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-white/40 mb-1">
-        Risk Level
-      </div>
-
-      <div className="text-sm text-white/80">
-        {aiConclusion.risk}
-      </div>
-    </div>
-
-    <div className="rounded-lg bg-black/30 border border-white/10 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-white/40 mb-1">
-        AI Trader Behavior
-      </div>
-
-      <div className="text-xs text-white/70 leading-relaxed">
-        {aiConclusion.behavior}
-      </div>
-    </div>
-  </div>
-
-  {/* KEY DRIVERS */}
-  <div>
-    <div className="text-[10px] uppercase tracking-wide text-white/40 mb-2">
-      Key Market Drivers
-    </div>
-
-    <div className="flex flex-wrap gap-2">
-      {aiConclusion.drivers.map((d: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, i: Key | null | undefined) => (
-        <div
-          key={i}
-          className="px-2 py-1 rounded-lg bg-white/10 text-[10px] text-white/70"
-        >
-          {d}
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
-
-    </div>
-
-   {/* ===================== */}
-{/* NARRATIVE ENGINE */}
-{/* ===================== */}
-<div className="space-y-2">
-
-  <div className="flex items-center justify-between">
-    <div className="text-xs text-white/60">
-      Market Narratives
-    </div>
-
-    <div className="text-[10px] text-white/30">
-      {narratives.length} active signals detected
-    </div>
-  </div>
-
-  <div
-    className={
-      sentimentExpanded
-        ? "grid grid-cols-2 gap-2"
-        : "space-y-2"
-    }
-  >
-    {narratives.map((n, i) => {
-        const narrative = explainNarrative(n.name);
-
-        return (
-          <div
-            key={i}
-            className={`
-                      rounded-lg bg-white/5 border border-white/10
-                      ${sentimentExpanded ? "p-2" : "p-2.5"}
-                    `}
-                  >
-            <div className="flex items-center gap-2">
-              <span className="text-xs">{narrative.icon}</span>
-              <div className="text-xs font-semibold">
-                {narrative.title}
-              </div>
+        {error && items.length > 0 && (
+          <div className="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2">
+            <div className="text-[10px] text-yellow-300">
+              ⚠ Data feed delayed
             </div>
 
-            <div className="text-xs text-white/50 mt-1">
-              {narrative.description}
+            <div className="mt-1 text-[9px] text-white/40">
+              Showing the last successful sentiment reading.
             </div>
+          </div>
+        )}
 
-            <div className="mt-2">
-              <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(n.score * 10, 100)}%` }}
-                  transition={{ duration: 0.8 }}
-                  className="h-full bg-gradient-to-r from-violet-500 to-emerald-400"
-                />
+        {/* =====================================================
+            MARKET MOOD
+        ===================================================== */}
+
+        <div className="mt-4 rounded-lg border border-white/10 bg-black/20 p-4">
+
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[8px] uppercase tracking-[0.2em] text-white/30">
+                Current Mood
               </div>
 
-              <div className="text-[10px] text-white/40 mt-1">
-                Market Influence: {Math.min(Math.round(n.score * 10), 100)}%
+              <motion.div
+                initial={{
+                  scale: 0.8,
+                  opacity: 0,
+                }}
+                animate={{
+                  scale: 1,
+                  opacity: 1,
+                }}
+                transition={{
+                  duration: 0.4,
+                }}
+                className={`mt-1 text-2xl font-bold ${activeUI.color}`}
+              >
+                {label}
+              </motion.div>
+            </div>
+
+            <div className="text-right">
+              <div className="text-[8px] uppercase tracking-wide text-white/25">
+                Sentiment Score
               </div>
-            </div>
 
-            <div className="text-xs mt-2 text-white/40">
-              {n.examples?.[0]}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-    </div>
-
-    {/* LIVE SIGNAL FEED */}
-    <div className="flex items-center justify-between">
-      <div className="text-xs text-white/50 uppercase tracking-wide">
-        Live Market Signals
-      </div>
-
-      <div className="flex gap-2 text-[10px] text-white/40">
-        <span className="text-green-400">BULLISH = Positive</span>
-        <span className="text-red-400">BEARISH = Negative</span>
-        <span className="text-yellow-400">NEUTRAL = Mixed</span>
-      </div>
-
-      <div className="text-[10px] text-white/30">
-        {uniqueItems.length} signals
-      </div>
-    </div>
-
-    <div className="space-y-2">
-     {(sentimentExpanded ? uniqueItems : uniqueItems.slice(0, 3)).map((n, i) => (
-        <a
-          key={i}
-          href={n.url}
-          target="_blank"
-          rel="noopener noreferrer"
-         className={`
-                    group block text-xs rounded-lg bg-black/40 border border-white/10
-                    ${sentimentExpanded ? "p-2" : "p-2"}
-                  `}
-                >
-          <div className="flex items-start gap-2">
-            <div
-              className={`mt-1 w-2 h-2 rounded-full ${
-                n.sentiment === "bullish"
-                  ? "bg-green-400"
-                  : n.sentiment === "bearish"
-                  ? "bg-red-400"
-                  : "bg-yellow-400"
-              }`}
-            />
-
-            <div className="flex-1">
               <div
-                className={`${
-                  n.sentiment === "bullish"
-                    ? "text-green-200"
-                    : n.sentiment === "bearish"
-                    ? "text-red-200"
-                    : "text-white/80"
-                }`}
+                className={`mt-1 text-lg font-semibold ${activeUI.color}`}
               >
-                {n.title}
-              </div>
-
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                     className={`px-1.5 py-0.5 rounded text-[10px]
-                    ${
-                        n.sentiment === "bullish"
-                        ? "bg-emerald-500/10 text-emerald-300"
-                        : n.sentiment === "bearish"
-                         ? "bg-red-500/10 text-red-300"
-                         : "bg-yellow-500/10 text-yellow-300"
-                     }`}
-                    >
-                   {n.sentiment.toUpperCase()}
-                  </span>
-
-                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-white/50">
-                     {n.source}
-                  </span>
-
-                  <span className="text-[10px] text-white/30">
-                     {fakeTimes[i % fakeTimes.length]}
-                  </span>
+                {score}/100
               </div>
             </div>
           </div>
-        </a>
-      ))}
-    </div>
 
-    <div className="text-[10px] text-white/30">
-        Headlines and external news sources belong to their respective publishers.
-    </div>
+          <div className="mt-4">
+            <div className="relative h-2 w-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-400">
+              <motion.div
+                initial={{
+                  left: "50%",
+                }}
+                animate={{
+                  left: `${score}%`,
+                }}
+                transition={{
+                  duration: 0.8,
+                }}
+                className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black bg-white shadow-lg"
+              />
+            </div>
 
-    <button
-        onClick={() => setSentimentExpanded(true)}
-          className="w-full mt-2 text-xs text-violet-300 border border-violet-500/20 rounded-lg py-2 hover:bg-violet-500/10"
+            <div className="mt-1 flex justify-between text-[8px] uppercase tracking-wide text-white/30">
+              <span>Fear</span>
+              <span>Neutral</span>
+              <span>Greed</span>
+            </div>
+          </div>
+
+          <div className="mt-3 text-[9px] leading-relaxed text-white/30">
+            This score summarizes the tone of current market news and investor reactions.
+          </div>
+        </div>
+
+        {/* =====================================================
+            WHAT IS HAPPENING?
+        ===================================================== */}
+
+        <div className="mt-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3">
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm">
+              🧠
+            </span>
+
+            <div>
+              <div className="text-[10px] font-semibold text-violet-300">
+                What Is Happening?
+              </div>
+
+              <div className="text-[8px] text-white/25">
+                AllChain's market read
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 text-[11px] leading-relaxed text-white/75">
+            {generateSummary()}
+          </div>
+        </div>
+
+        {/* =====================================================
+            WHAT DOES THIS MEAN?
+        ===================================================== */}
+
+        <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+
+          <div className="text-[9px] uppercase tracking-[0.2em] text-white/30">
+            What Does This Mean?
+          </div>
+
+          <div className="mt-2 text-[10px] leading-relaxed text-white/55">
+            {score < 40
+              ? "Investors appear cautious. Fear is relatively strong, so price movements may remain unstable."
+              : score < 60
+              ? "Investors are divided. There is no strong agreement about where the market is heading."
+              : "Investors are becoming more confident. Positive sentiment is currently stronger than negative sentiment."}
+          </div>
+
+          <div className="mt-2 text-[8px] leading-relaxed text-white/20">
+            Sentiment shows how investors are behaving. It does not predict the next price move.
+          </div>
+        </div>
+
+        {/* =====================================================
+            IMPORTANT SIGNALS
+        ===================================================== */}
+
+        {alerts.length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+
+            <div className="text-[9px] uppercase tracking-[0.2em] text-amber-300/60">
+              Worth Watching
+            </div>
+
+            <div className="mt-2 space-y-2">
+              {alerts
+                .slice(
+                  0,
+                  sentimentExpanded
+                    ? alerts.length
+                    : 3
+                )
+                .map(
+                  (
+                    alert,
+                    index
+                  ) => (
+                    <div
+                      key={index}
+                      className="text-[9px] leading-relaxed text-white/50"
+                    >
+                      {alert}
+                    </div>
+                  )
+                )}
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            AI CONCLUSION
+        ===================================================== */}
+
+        <div className="mt-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3">
+
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-semibold text-violet-300">
+                🧠 AllChain Market Conclusion
+              </div>
+
+              <div className="mt-0.5 text-[8px] text-white/25">
+                A simplified interpretation of the current signals
+              </div>
+            </div>
+
+            <div className="rounded-md bg-white/10 px-2 py-1 text-[8px] text-white/50">
+              {aiConclusion.state}
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <div className="text-[8px] uppercase tracking-wide text-white/30">
+              The Bigger Picture
+            </div>
+
+            <div className="mt-1 text-[10px] leading-relaxed text-white/70">
+              {aiConclusion.summary}
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <div className="text-[8px] uppercase tracking-wide text-white/30">
+              Short-Term View
+            </div>
+
+            <div className="mt-1 text-[9px] leading-relaxed text-white/50">
+              {aiConclusion.outlook}
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+
+            <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+              <div className="text-[8px] uppercase tracking-wide text-white/30">
+                Risk
+              </div>
+
+              <div className="mt-1 text-[10px] font-medium text-white/70">
+                {aiConclusion.risk}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 bg-black/30 p-2.5">
+              <div className="text-[8px] uppercase tracking-wide text-white/30">
+                Investor Behaviour
+              </div>
+
+              <div className="mt-1 text-[9px] leading-relaxed text-white/55">
+                {aiConclusion.behavior}
+              </div>
+            </div>
+
+          </div>
+
+          {aiConclusion.drivers.length > 0 && (
+            <div className="mt-3">
+
+              <div className="text-[8px] uppercase tracking-wide text-white/30">
+                Main Things Driving Sentiment
+              </div>
+
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {aiConclusion.drivers.map(
+                  (
+                    d: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined,
+                    i: Key | null | undefined
+                  ) => (
+                    <div
+                      key={i}
+                      className="rounded-md bg-white/10 px-2 py-1 text-[8px] text-white/55"
+                    >
+                      {d}
+                    </div>
+                  )
+                )}
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        {/* =====================================================
+            MARKET STORIES
+        ===================================================== */}
+
+        <div className="mt-4">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-white/30">
+                What's Influencing Investors?
+              </div>
+
+              <div className="mt-1 text-[8px] text-white/20">
+                The biggest stories currently shaping sentiment
+              </div>
+            </div>
+
+            <div className="text-[8px] text-white/25">
+              {narratives.length} themes
+            </div>
+
+          </div>
+
+          <div
+            className={
+              sentimentExpanded
+                ? "mt-2 grid grid-cols-1 gap-2 md:grid-cols-2"
+                : "mt-2 space-y-2"
+            }
+          >
+
+            {(sentimentExpanded
+              ? narratives
+              : narratives.slice(0, 3)
+            ).map((n, i) => {
+
+              const narrative =
+                explainNarrative(
+                  n.name
+                );
+
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg border border-white/10 bg-white/5 p-3"
+                >
+
+                  <div className="flex items-start gap-2">
+
+                    <span className="text-sm">
+                      {narrative.icon}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+
+                      <div className="text-[10px] font-semibold text-white">
+                        {narrative.title}
+                      </div>
+
+                      <div className="mt-1 text-[9px] leading-relaxed text-white/45">
+                        {narrative.description}
+                      </div>
+
+                      {n.examples?.[0] && (
+                        <div className="mt-2 border-l border-white/10 pl-2 text-[8px] leading-relaxed text-white/30">
+                          {n.examples[0]}
+                        </div>
+                      )}
+
+                    </div>
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+        </div>
+
+        {/* =====================================================
+            LIVE NEWS
+        ===================================================== */}
+
+        <div className="mt-4">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-white/30">
+                What's Happening Now?
+              </div>
+
+              <div className="mt-1 text-[8px] text-white/20">
+                Recent market headlines behind the sentiment reading
+              </div>
+            </div>
+
+            <div className="text-[8px] text-white/25">
+              {uniqueItems.length} signals
+            </div>
+
+          </div>
+
+          <div className="mt-2 space-y-2">
+
+            {(sentimentExpanded
+              ? uniqueItems
+              : uniqueItems.slice(0, 3)
+            ).map((n, i) => (
+
+              <a
+                key={i}
+                href={n.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block rounded-lg border border-white/10 bg-black/40 p-2.5 transition hover:bg-white/[0.04]"
+              >
+
+                <div className="flex items-start gap-2">
+
+                  <div
+                    className={`
+                      mt-1
+                      h-2
+                      w-2
+                      shrink-0
+                      rounded-full
+                      ${
+                        n.sentiment === "bullish"
+                          ? "bg-green-400"
+                          : n.sentiment === "bearish"
+                          ? "bg-red-400"
+                          : "bg-yellow-400"
+                      }
+                    `}
+                  />
+
+                  <div className="flex-1">
+
+                    <div
+                      className={`
+                        text-[10px]
+                        leading-relaxed
+                        ${
+                          n.sentiment === "bullish"
+                            ? "text-green-200"
+                            : n.sentiment === "bearish"
+                            ? "text-red-200"
+                            : "text-white/75"
+                        }
+                      `}
+                    >
+                      {n.title}
+                    </div>
+
+                    <div className="mt-1.5 flex items-center gap-2">
+
+                      <span
+                        className={`
+                          rounded
+                          px-1.5
+                          py-0.5
+                          text-[8px]
+                          ${
+                            n.sentiment === "bullish"
+                              ? "bg-emerald-500/10 text-emerald-300"
+                              : n.sentiment === "bearish"
+                              ? "bg-red-500/10 text-red-300"
+                              : "bg-yellow-500/10 text-yellow-300"
+                          }
+                        `}
+                      >
+                        {n.sentiment === "bullish"
+                          ? "POSITIVE"
+                          : n.sentiment === "bearish"
+                          ? "NEGATIVE"
+                          : "MIXED"}
+                      </span>
+
+                      <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] text-white/40">
+                        {n.source}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </a>
+            ))}
+
+          </div>
+
+          <div className="mt-2 text-[8px] leading-relaxed text-white/20">
+            Headlines and external news sources belong to their respective publishers.
+          </div>
+
+        </div>
+
+        {/* =====================================================
+            VIEW ALL
+        ===================================================== */}
+
+        <button
+          onClick={() =>
+            setSentimentExpanded(
+              !sentimentExpanded
+            )
+          }
+          className="mt-3 w-full rounded-lg border border-violet-500/20 py-2 text-[9px] font-medium text-violet-300 transition hover:bg-violet-500/10"
         >
-      View All Signals
-      </button>
-    </div>
-    
-  </motion.div>
-);}
+          {sentimentExpanded
+            ? "Show Compact View"
+            : "View Full Sentiment Analysis"}
+        </button>
+
+        {/* =====================================================
+            FOOTER
+        ===================================================== */}
+
+        <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2">
+
+          <div className="text-[8px] text-white/20">
+            Based on current market news and investor signals
+          </div>
+
+          <div className="text-[8px] text-white/20">
+            {updatedText || "Updating..."}
+          </div>
+
+        </div>
+
+      </div>
+    </motion.div>
+  );
+}

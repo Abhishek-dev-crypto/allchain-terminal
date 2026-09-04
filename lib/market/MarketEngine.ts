@@ -1,257 +1,415 @@
 import "server-only";
 
-import type { Ticker, Candle, MarketSnapshot } from "./types";
+import type {
+  Ticker,
+  Candle,
+  MarketSnapshot,
+} from "./types";
 
-import { getTickerPrice, getKlines } from "./binanceClient";
+import {
+  getTickerPrice,
+  getKlines,
+} from "./binanceClient";
+
 import { getCoinGeckoPrice } from "./coinGeckoClient";
 
-import { buildMarketContextFromCandles } from "./cache/marketContext";
-import { cacheOrchestrator } from "./cache/cacheOrchestrator";
+import {
+  buildMarketContextFromCandles,
+} from "./cache/marketContext";
+
+import {
+  cacheOrchestrator,
+} from "./cache/cacheOrchestrator";
 
 import { startMarketWorker } from "./backgroundMarketWorker";
 
 class MarketEngine {
   private static instance: MarketEngine;
 
-  // ONLY dedupe layer (NOT cache)
-  private inflightTicker = new Map<string, Promise<Ticker>>();
-  private inflightCandles = new Map<string, Promise<Candle[]>>();
-  private inflightSnapshot = new Map<string, Promise<MarketSnapshot>>();
+  /* =========================================================
+     SINGLETON
+  ========================================================= */
 
   static getInstance() {
     if (!MarketEngine.instance) {
-      MarketEngine.instance = new MarketEngine();
+      MarketEngine.instance =
+        new MarketEngine();
     }
+
     return MarketEngine.instance;
   }
 
-  // =========================
-  // TICKER
-  // =========================
- 
-async getTicker(symbol: string): Promise<Ticker> {
-  const key = `ticker:${symbol}`;
+  /* =========================================================
+     TICKER
+  ========================================================= */
 
-  if (this.inflightTicker.has(key)) {
-    return this.inflightTicker.get(key)!;
+  async getTicker(
+    symbol: string
+  ): Promise<Ticker> {
+    const normalizedSymbol =
+      symbol.toUpperCase();
+
+    const key =
+      `ticker:${normalizedSymbol}`;
+
+    return cacheOrchestrator<Ticker>({
+      key,
+
+      type: "ticker",
+
+      fetcher: () =>
+        this.fetchTicker(
+          normalizedSymbol
+        ),
+
+      getContext: () => ({
+        symbol: normalizedSymbol,
+        volatility: 3,
+        momentum: 0,
+        regime: "TRENDING",
+      }),
+    });
   }
 
-  const promise = cacheOrchestrator<Ticker>({
-    key,
-    type: "ticker",
+  /* =========================================================
+     TICKER FETCHER
+  ========================================================= */
 
-    fetcher: () => this.fetchTicker(symbol),
-
-    getContext: () => ({
-      symbol,
-      volatility: 3,
-      momentum: 0,
-      regime: "TRENDING",
-    }),
-  });
-
-  this.inflightTicker.set(key, promise);
-
-  try {
-    return await promise;
-  } finally {
-    this.inflightTicker.delete(key);
-  }
-}
-
-  private async fetchTicker(symbol: string): Promise<Ticker> {
+  private async fetchTicker(
+    symbol: string
+  ): Promise<Ticker> {
     try {
-      const start = performance.now();
+      const start =
+        performance.now();
 
-      const d = await getTickerPrice(symbol);
+      const d =
+        await getTickerPrice(symbol);
 
       console.log(
-         `⚡ Binance Ticker ${symbol}: ${(performance.now() - start).toFixed(0)}ms`
+        `⚡ Binance Ticker ${symbol}: ${(
+          performance.now() - start
+        ).toFixed(0)}ms`
+      );
+
+      return {
+        symbol,
+
+        price:
+          Number(d.price || 0),
+
+        change24h:
+          Number(d.change24h || 0),
+
+        high24h:
+          Number(d.high24h || 0),
+
+        low24h:
+          Number(d.low24h || 0),
+
+        volume24h:
+          Number(d.volume24h || 0),
+
+        source: "binance",
+
+        timestamp:
+          Date.now(),
+      };
+
+    } catch {
+      /*
+       * Binance fallback
+       */
+      const cg =
+        await getCoinGeckoPrice(
+          symbol
         );
 
       return {
         symbol,
-        price: Number(d.price || 0),
-        change24h: Number(d.change24h || 0),
-        high24h: Number(d.high24h || 0),
-        low24h: Number(d.low24h || 0),
-        volume24h: Number(d.volume24h || 0),
-        source: "binance",
-        timestamp: Date.now(),
-      };
-    } catch {
-      const cg = await getCoinGeckoPrice(symbol);
 
-      return {
-        symbol,
-        price: Number(cg.price || 0),
-        change24h: Number(cg.change24h || 0),
+        price:
+          Number(cg.price || 0),
+
+        change24h:
+          Number(cg.change24h || 0),
+
         high24h: 0,
+
         low24h: 0,
+
         volume24h: 0,
+
         source: "coingecko",
-        timestamp: Date.now(),
+
+        timestamp:
+          Date.now(),
       };
     }
   }
-  // =========================
-// CANDLES
-// =========================
-async getCandles(
-  symbol: string,
-  interval = "1m"
-): Promise<Candle[]> {
-  const key = `candles:${symbol}:${interval}`;
 
-  if (this.inflightCandles.has(key)) {
-    return this.inflightCandles.get(key)!;
+  /* =========================================================
+     CANDLES
+  ========================================================= */
+
+  async getCandles(
+    symbol: string,
+    interval = "1m"
+  ): Promise<Candle[]> {
+    const normalizedSymbol =
+      symbol.toUpperCase();
+
+    const key =
+      `candles:${normalizedSymbol}:${interval}`;
+
+    return cacheOrchestrator<Candle[]>({
+      key,
+
+      type: "candles",
+
+      fetcher: async () => {
+        const start =
+          performance.now();
+
+        const result =
+          await getKlines(
+            normalizedSymbol,
+            interval
+          );
+
+        console.log(
+          `📈 ${normalizedSymbol} ${interval}: ${(
+            performance.now() - start
+          ).toFixed(0)}ms`
+        );
+
+        return (result || [])
+          .filter(
+            (c: any) =>
+              c &&
+              typeof c.time ===
+                "number" &&
+              typeof c.close ===
+                "number"
+          )
+          .map((c: any) => ({
+            time:
+              Number(c.time),
+
+            open:
+              Number(c.open),
+
+            high:
+              Number(c.high),
+
+            low:
+              Number(c.low),
+
+            close:
+              Number(c.close),
+
+            volume:
+              Number(c.volume || 0),
+          }));
+      },
+
+      getContext: (candles) =>
+        buildMarketContextFromCandles(
+          [candles],
+          normalizedSymbol,
+          interval
+        ),
+    });
   }
 
-  const promise = cacheOrchestrator<Candle[]>({
-    key,
-    type: "candles",
+  /* =========================================================
+     SNAPSHOT
+  ========================================================= */
 
-    fetcher: async () => {
-      const start = performance.now();
+  async getSnapshot(
+    symbol: string
+  ): Promise<MarketSnapshot> {
+    const normalizedSymbol =
+      symbol.toUpperCase();
 
-      const result = await getKlines(symbol, interval);
+    const key =
+      `snapshot:${normalizedSymbol}`;
 
-      console.log(
-       `📈 ${symbol} ${interval}: ${(performance.now() - start).toFixed(0)}ms`
-      );
+    return cacheOrchestrator<MarketSnapshot>({
+      key,
 
-      return (result || [])
-        .filter(
-          (c: any) =>
-            c &&
-            typeof c.time === "number" &&
-            typeof c.close === "number"
-        )
-        .map((c: any) => ({
-          time: Number(c.time),
-          open: Number(c.open),
-          high: Number(c.high),
-          low: Number(c.low),
-          close: Number(c.close),
-          volume: Number(c.volume || 0),
-        }));
-    },
+      type: "snapshot",
 
-    getContext: (candles) =>
-      buildMarketContextFromCandles([candles], symbol, interval),
-  });
+      fetcher: () =>
+        this.buildSnapshot(
+          normalizedSymbol
+        ),
 
-  this.inflightCandles.set(key, promise);
-
-  try {
-    return await promise;
-  } finally {
-    this.inflightCandles.delete(key);
-  }
-}
-
-// =========================
-// SNAPSHOT
-// =========================
-async getSnapshot(symbol: string): Promise<MarketSnapshot> {
-  const key = `snapshot:${symbol}`;
-
-  if (this.inflightSnapshot.has(key)) {
-    return this.inflightSnapshot.get(key)!;
+      getContext: (snapshot) =>
+        buildMarketContextFromCandles(
+          [
+            snapshot.candles["1m"],
+            snapshot.candles["5m"],
+            snapshot.candles["15m"],
+            snapshot.candles["30m"],
+            snapshot.candles["1h"],
+            snapshot.candles["4h"],
+            snapshot.candles["1d"],
+          ],
+          normalizedSymbol
+        ),
+    });
   }
 
-  const promise = cacheOrchestrator<MarketSnapshot>({
-    key,
-    type: "snapshot",
+  /* =========================================================
+     SNAPSHOT BUILDER
+  ========================================================= */
 
-    fetcher: () => this.buildSnapshot(symbol),
+  private async buildSnapshot(
+    symbol: string
+  ): Promise<MarketSnapshot> {
+    const start =
+      performance.now();
 
-    getContext: (snapshot) =>
-      buildMarketContextFromCandles(
-        [
-          snapshot.candles["1m"],
-          snapshot.candles["5m"],
-          snapshot.candles["15m"],
-          snapshot.candles["30m"],
-          snapshot.candles["1h"],
-          snapshot.candles["4h"],
-          snapshot.candles["1d"],
-        ],
-        symbol
+    /*
+     * All independent market requests
+     * execute concurrently.
+     *
+     * Each request is independently
+     * protected by cacheOrchestrator.
+     */
+    const [
+      ticker,
+      c1,
+      c5,
+      c15,
+      c30,
+      c1h,
+      c4h,
+      c1d,
+    ] = await Promise.all([
+      this.getTicker(symbol),
+
+      this.getCandles(
+        symbol,
+        "1m"
       ),
-  });
 
-  this.inflightSnapshot.set(key, promise);
+      this.getCandles(
+        symbol,
+        "5m"
+      ),
 
-  try {
-    return await promise;
-  } finally {
-    this.inflightSnapshot.delete(key);
+      this.getCandles(
+        symbol,
+        "15m"
+      ),
+
+      this.getCandles(
+        symbol,
+        "30m"
+      ),
+
+      this.getCandles(
+        symbol,
+        "1h"
+      ),
+
+      this.getCandles(
+        symbol,
+        "4h"
+      ),
+
+      this.getCandles(
+        symbol,
+        "1d"
+      ),
+    ]);
+
+    /* =======================================================
+       SAFETY NORMALIZATION
+    ======================================================= */
+
+    const safeCandles = (
+      arr: Candle[] = []
+    ): Candle[] =>
+      arr
+        .filter(
+          (c) =>
+            c &&
+            typeof c.time ===
+              "number" &&
+            typeof c.close ===
+              "number"
+        )
+        .map((c) => ({
+          time:
+            Number(c.time),
+
+          open:
+            Number(c.open || 0),
+
+          high:
+            Number(c.high || 0),
+
+          low:
+            Number(c.low || 0),
+
+          close:
+            Number(c.close || 0),
+
+          volume:
+            Number(c.volume || 0),
+        }));
+
+    console.log(
+      `📦 Snapshot ${symbol}: ${(
+        performance.now() - start
+      ).toFixed(0)}ms`
+    );
+
+    return {
+      ticker,
+
+      candles: {
+        "1m":
+          safeCandles(c1),
+
+        "5m":
+          safeCandles(c5),
+
+        "15m":
+          safeCandles(c15),
+
+        "30m":
+          safeCandles(c30),
+
+        "1h":
+          safeCandles(c1h),
+
+        "4h":
+          safeCandles(c4h),
+
+        "1d":
+          safeCandles(c1d),
+      },
+    };
   }
 }
-  // =========================
-  // SNAPSHOT BUILDER
-  // =========================
- private async buildSnapshot(symbol: string): Promise<MarketSnapshot> {
-  const start = performance.now();
-  const [
-    ticker,
-    c1,
-    c5,
-    c15,
-    c30,
-    c1h,
-    c4h,
-    c1d,
-  ] = await Promise.all([
-    this.getTicker(symbol),
-    this.getCandles(symbol, "1m"),
-    this.getCandles(symbol, "5m"),
-    this.getCandles(symbol, "15m"),
-    this.getCandles(symbol, "30m"),
-    this.getCandles(symbol, "1h"),
-    this.getCandles(symbol, "4h"),
-    this.getCandles(symbol, "1d"),
-  ]);
 
-  const safeCandles = (arr: any[] = []): Candle[] =>
-    (arr || [])
-      .filter(
-        (c) =>
-          c &&
-          typeof c.time === "number" &&
-          typeof c.close === "number"
-      )
-      .map((c) => ({
-        time: Number(c.time),
-        open: Number(c.open || 0),
-        high: Number(c.high || 0),
-        low: Number(c.low || 0),
-        close: Number(c.close || 0),
-        volume: Number(c.volume || 0),
-      }));
+/* =========================================================
+   SINGLETON INSTANCE
+========================================================= */
 
-      console.log(
-  `📦 Snapshot ${symbol}: ${(performance.now() - start).toFixed(0)}ms`
-);
+export const marketEngine =
+  MarketEngine.getInstance();
 
-  return {
-    ticker,
-    candles: {
-      "1m": safeCandles(c1),
-      "5m": safeCandles(c5),
-      "15m": safeCandles(c15),
-      "30m": safeCandles(c30),
-      "1h": safeCandles(c1h),
-      "4h": safeCandles(c4h),
-      "1d": safeCandles(c1d),
-    },
-  };
-}
-}
+/* =========================================================
+   DEVELOPMENT WORKER
+========================================================= */
 
-export const marketEngine = MarketEngine.getInstance();
-
-if (process.env.NODE_ENV !== "production") {
+if (
+  process.env.NODE_ENV !==
+  "production"
+) {
   startMarketWorker();
 }

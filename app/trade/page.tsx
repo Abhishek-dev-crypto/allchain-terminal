@@ -23,6 +23,8 @@ import TradeSuccessModal from '../components/TradeSuccessModal';
 
 import TradeInsightPanel from '../components/TradeInsightPanel';
 
+import { trackEvent } from "@/lib/analytics";
+
 type Coin = {
   symbol: string;
   name: string;
@@ -65,9 +67,7 @@ export default function TradePage() {
   const [currentPriceMap, setCurrentPriceMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "trade_loaded");
-  }
+  trackEvent("trade_loaded");
 }, []);
 
 

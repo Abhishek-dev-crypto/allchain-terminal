@@ -8,7 +8,7 @@ import { auth , db } from "../lib/firebaseConfig";
 import Footer from "./components/Footer";
 import LiveTicker from "./components/LiveTicker";
 import MiniPreview from "./components/MiniPreview";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import MarketPagePreview from "./components/MarketPagePreview";
 import { trackEvent } from "../lib/analytics";
 import { useGenieRuntime } from "@/lib/hooks/useGenieRuntime";
@@ -350,10 +350,9 @@ useEffect(() => {
   /* =========================
      LOGIN
   ========================= */
- const login = async () => {
-  
+const login = async () => {
   try {
-    setAuthLoading(true); // 🔥 START LOADING
+    setAuthLoading(true);
 
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
@@ -361,8 +360,10 @@ useEffect(() => {
     const user = result.user;
 
     trackEvent("user_signup", {
-    method: "google",
+      method: "google",
     });
+
+    /* ================= USER INITIALIZATION ================= */
 
     await setDoc(
       doc(db, "users", user.uid),
@@ -376,15 +377,27 @@ useEffect(() => {
       { merge: true }
     );
 
-    // small delay so UX feels smooth (important)
-    
-      router.push("/intel");
-      
-    
+    /* ================= DEMO PORTFOLIO INITIALIZATION ================= */
+
+    const portfolioRef = doc(db, "portfolios", user.uid);
+    const portfolioSnap = await getDoc(portfolioRef);
+
+    if (!portfolioSnap.exists()) {
+      await setDoc(portfolioRef, {
+        trades: [],
+        activeOrders: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    /* ================= REDIRECT ================= */
+
+    router.push("/intel");
 
   } catch (err) {
     console.error("LOGIN ERROR", err);
-    setAuthLoading(false); // stop loading if error
+    setAuthLoading(false);
   }
 };
 

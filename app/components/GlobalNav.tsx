@@ -52,6 +52,7 @@ export default function GlobalNav() {
     const ref = doc(db, 'portfolios', user.uid);
 
     const unsub = onSnapshot(ref, (snap) => {
+      console.log("GLOBAL NAV PORTFOLIO SNAPSHOT:", snap.exists(), snap.data());
       if (!snap.exists()) return;
 
       const data = snap.data();

@@ -264,7 +264,6 @@ function NavLinks({
   const links = [
   { name: 'Terminal', href: '/trade' },
   { name: 'Markets', href: '/market' },
-  { name: 'NFTs', href: '/nft' },
   { name: 'Learn', href: '/learn' },
 ];
 
